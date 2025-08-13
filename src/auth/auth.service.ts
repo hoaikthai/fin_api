@@ -15,13 +15,23 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(email: string, password: string): Promise<User> {
+  async register(
+    email: string,
+    password: string,
+    firstName?: string,
+    lastName?: string,
+  ): Promise<User> {
     const existingUser = await this.userService.findByEmail(email);
     if (existingUser) {
       throw new ConflictException('Email already in use');
     }
     const hashedPassword = await hash(password, 10);
-    return this.userService.create({ email, password: hashedPassword });
+    return this.userService.create({
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+    });
   }
 
   async validateUser(email: string, password: string): Promise<User> {

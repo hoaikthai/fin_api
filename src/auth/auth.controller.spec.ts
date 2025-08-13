@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 const mockAuthService = {
   register: jest.fn(),
@@ -22,21 +24,80 @@ describe('AuthController', () => {
     jest.clearAllMocks();
   });
 
-  it('should call AuthService.register on register', async () => {
-    mockAuthService.register.mockResolvedValue({
-      id: 1,
-      email: 'a@b.com',
-      password: 'hashed',
+  describe('register', () => {
+    it('should register user without profile fields and exclude password', async () => {
+      const registerDto: RegisterDto = {
+        email: 'test@test.com',
+        password: 'password123',
+      };
+
+      mockAuthService.register.mockResolvedValue({
+        id: 1,
+        email: 'test@test.com',
+        password: 'hashedpassword',
+        firstName: undefined,
+        lastName: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await controller.register(registerDto);
+
+      expect(authService.register).toHaveBeenCalledWith(
+        'test@test.com',
+        'password123',
+        undefined,
+        undefined,
+      );
+      expect(result).not.toHaveProperty('password');
+      expect(result.email).toBe('test@test.com');
     });
-    const result = await controller.register('a@b.com', 'pass');
-    expect(authService.register).toHaveBeenCalledWith('a@b.com', 'pass');
-    expect(result).toEqual({ id: 1, email: 'a@b.com', password: 'hashed' });
+
+    it('should register user with profile fields and exclude password', async () => {
+      const registerDto: RegisterDto = {
+        email: 'jane@test.com',
+        password: 'password123',
+        firstName: 'Jane',
+        lastName: 'Doe',
+      };
+
+      mockAuthService.register.mockResolvedValue({
+        id: 2,
+        email: 'jane@test.com',
+        password: 'hashedpassword',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await controller.register(registerDto);
+
+      expect(authService.register).toHaveBeenCalledWith(
+        'jane@test.com',
+        'password123',
+        'Jane',
+        'Doe',
+      );
+      expect(result).not.toHaveProperty('password');
+      expect(result.firstName).toBe('Jane');
+      expect(result.lastName).toBe('Doe');
+    });
   });
 
-  it('should call AuthService.login on login and return JWT', async () => {
-    mockAuthService.login.mockResolvedValue({ access_token: 'jwt-token' });
-    const result = await controller.login('a@b.com', 'pass');
-    expect(authService.login).toHaveBeenCalledWith('a@b.com', 'pass');
-    expect(result).toEqual({ access_token: 'jwt-token' });
+  describe('login', () => {
+    it('should call AuthService.login with DTO and return JWT', async () => {
+      const loginDto: LoginDto = {
+        email: 'test@test.com',
+        password: 'password123',
+      };
+
+      mockAuthService.login.mockResolvedValue({ access_token: 'jwt-token' });
+
+      const result = await controller.login(loginDto);
+
+      expect(authService.login).toHaveBeenCalledWith('test@test.com', 'password123');
+      expect(result).toEqual({ access_token: 'jwt-token' });
+    });
   });
 });

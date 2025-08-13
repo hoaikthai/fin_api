@@ -35,7 +35,6 @@ describe('AuthService', () => {
     jest.clearAllMocks();
   });
 
-
   describe('register', () => {
     it('should throw if user already exists', async () => {
       userService.findByEmail.mockResolvedValue({
@@ -47,7 +46,8 @@ describe('AuthService', () => {
         ConflictException,
       );
     });
-    it('should create user if not exists', async () => {
+
+    it('should create user without profile fields if not exists', async () => {
       userService.findByEmail.mockResolvedValue(null);
       userService.create.mockResolvedValue({
         id: 1,
@@ -59,11 +59,39 @@ describe('AuthService', () => {
       expect(userService.create).toHaveBeenCalledWith({
         email: 'test@test.com',
         password: 'hashed',
+        firstName: undefined,
+        lastName: undefined,
       });
       expect(user).toEqual({
         id: 1,
         email: 'test@test.com',
         password: 'hashed',
+      });
+    });
+
+    it('should create user with profile fields', async () => {
+      userService.findByEmail.mockResolvedValue(null);
+      userService.create.mockResolvedValue({
+        id: 1,
+        email: 'test@test.com',
+        password: 'hashed',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+      (hash as jest.Mock).mockResolvedValue('hashed');
+      const user = await service.register('test@test.com', 'pass', 'John', 'Doe');
+      expect(userService.create).toHaveBeenCalledWith({
+        email: 'test@test.com',
+        password: 'hashed',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+      expect(user).toEqual({
+        id: 1,
+        email: 'test@test.com',
+        password: 'hashed',
+        firstName: 'John',
+        lastName: 'Doe',
       });
     });
   });
@@ -115,13 +143,18 @@ describe('AuthService', () => {
       const result = await service.login('test@test.com', 'pass');
       expect(userService.findByEmail).toHaveBeenCalledWith('test@test.com');
       expect(compare).toHaveBeenCalledWith('pass', 'hashed');
-      expect(jwtService.signAsync).toHaveBeenCalledWith({ sub: 1, email: 'test@test.com' });
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        sub: 1,
+        email: 'test@test.com',
+      });
       expect(result).toEqual({ access_token: 'jwt-token' });
     });
 
     it('should throw if credentials invalid', async () => {
       userService.findByEmail.mockResolvedValue(null);
-      await expect(service.login('bad@test.com', 'badpass')).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('bad@test.com', 'badpass')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });
