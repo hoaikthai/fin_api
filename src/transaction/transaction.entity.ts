@@ -18,8 +18,8 @@ export enum TransactionType {
 
 @Entity()
 export class Transaction {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({
     type: 'enum',
@@ -36,22 +36,22 @@ export class Transaction {
   @Column({ nullable: true })
   category: string;
 
-  @Column()
-  userId: number;
+  @Column('uuid')
+  userId: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
-  accountId: number;
+  @Column('uuid')
+  accountId: string;
 
   @ManyToOne(() => Account)
   @JoinColumn({ name: 'accountId' })
   account: Account;
 
-  @Column({ nullable: true })
-  toAccountId: number | null;
+  @Column('uuid', { nullable: true })
+  toAccountId: string | null;
 
   @ManyToOne(() => Account)
   @JoinColumn({ name: 'toAccountId' })

@@ -86,7 +86,7 @@ Required environment variables (see .env.example):
 - **Prefer**
   - ?? over ||
 - **TypeScript**
-  - Run typecheck after each implementation
+  - Run `pnpm typecheck` after each implementation
 
 ## Key Files and Structure
 

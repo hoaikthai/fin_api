@@ -22,21 +22,23 @@ describe('AccountController', () => {
   let controller: AccountController;
   let accountService: typeof mockAccountService;
 
+  const mockUserId = crypto.randomUUID();
   const mockAuthenticatedRequest = {
     user: {
-      sub: 1,
+      sub: mockUserId,
       email: 'test@example.com',
     },
   } as AuthenticatedRequest;
 
+  const mockAccountId = crypto.randomUUID();
   const mockAccount = {
-    id: 1,
+    id: mockAccountId,
     name: 'Test Account',
     currency: 'USD',
     balance: 1000,
     description: 'Test description',
     isActive: true,
-    userId: 1,
+    userId: mockUserId,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -71,7 +73,10 @@ describe('AccountController', () => {
         createAccountDto,
       );
 
-      expect(accountService.create).toHaveBeenCalledWith(1, createAccountDto);
+      expect(accountService.create).toHaveBeenCalledWith(
+        mockUserId,
+        createAccountDto,
+      );
       expect(result).toEqual(mockAccount);
     });
 
@@ -88,7 +93,10 @@ describe('AccountController', () => {
         createAccountDto,
       );
 
-      expect(accountService.create).toHaveBeenCalledWith(1, createAccountDto);
+      expect(accountService.create).toHaveBeenCalledWith(
+        mockUserId,
+        createAccountDto,
+      );
       expect(result).toEqual(mockAccount);
     });
   });
@@ -97,13 +105,13 @@ describe('AccountController', () => {
     it('should return all accounts for the authenticated user', async () => {
       const mockAccounts = [
         mockAccount,
-        { ...mockAccount, id: 2, name: 'Account 2' },
+        { ...mockAccount, id: crypto.randomUUID(), name: 'Account 2' },
       ];
       mockAccountService.findAllByUser.mockResolvedValue(mockAccounts);
 
       const result = await controller.findAll(mockAuthenticatedRequest);
 
-      expect(accountService.findAllByUser).toHaveBeenCalledWith(1);
+      expect(accountService.findAllByUser).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual(mockAccounts);
     });
 
@@ -112,7 +120,7 @@ describe('AccountController', () => {
 
       const result = await controller.findAll(mockAuthenticatedRequest);
 
-      expect(accountService.findAllByUser).toHaveBeenCalledWith(1);
+      expect(accountService.findAllByUser).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual([]);
     });
   });
@@ -121,20 +129,30 @@ describe('AccountController', () => {
     it('should return a specific account', async () => {
       mockAccountService.findOne.mockResolvedValue(mockAccount);
 
-      const result = await controller.findOne(1, mockAuthenticatedRequest);
+      const result = await controller.findOne(
+        mockAccountId,
+        mockAuthenticatedRequest,
+      );
 
-      expect(accountService.findOne).toHaveBeenCalledWith(1, 1);
+      expect(accountService.findOne).toHaveBeenCalledWith(
+        mockAccountId,
+        mockUserId,
+      );
       expect(result).toEqual(mockAccount);
     });
 
     it('should handle account not found', async () => {
       const error = new Error('Account not found');
       mockAccountService.findOne.mockRejectedValue(error);
+      const nonExistentId = crypto.randomUUID();
 
       await expect(
-        controller.findOne(999, mockAuthenticatedRequest),
+        controller.findOne(nonExistentId, mockAuthenticatedRequest),
       ).rejects.toThrow(error);
-      expect(accountService.findOne).toHaveBeenCalledWith(999, 1);
+      expect(accountService.findOne).toHaveBeenCalledWith(
+        nonExistentId,
+        mockUserId,
+      );
     });
   });
 
@@ -149,14 +167,14 @@ describe('AccountController', () => {
       mockAccountService.update.mockResolvedValue(updatedAccount);
 
       const result = await controller.update(
-        1,
+        mockAccountId,
         mockAuthenticatedRequest,
         updateAccountDto,
       );
 
       expect(accountService.update).toHaveBeenCalledWith(
-        1,
-        1,
+        mockAccountId,
+        mockUserId,
         updateAccountDto,
       );
       expect(result).toEqual(updatedAccount);
@@ -171,14 +189,14 @@ describe('AccountController', () => {
       mockAccountService.update.mockResolvedValue(updatedAccount);
 
       const result = await controller.update(
-        1,
+        mockAccountId,
         mockAuthenticatedRequest,
         updateAccountDto,
       );
 
       expect(accountService.update).toHaveBeenCalledWith(
-        1,
-        1,
+        mockAccountId,
+        mockUserId,
         updateAccountDto,
       );
       expect(result).toEqual(updatedAccount);
@@ -189,20 +207,30 @@ describe('AccountController', () => {
     it('should delete an account', async () => {
       mockAccountService.remove.mockResolvedValue(undefined);
 
-      const result = await controller.remove(1, mockAuthenticatedRequest);
+      const result = await controller.remove(
+        mockAccountId,
+        mockAuthenticatedRequest,
+      );
 
-      expect(accountService.remove).toHaveBeenCalledWith(1, 1);
+      expect(accountService.remove).toHaveBeenCalledWith(
+        mockAccountId,
+        mockUserId,
+      );
       expect(result).toEqual({ message: 'Account deleted successfully' });
     });
 
     it('should handle account not found during deletion', async () => {
       const error = new Error('Account not found');
       mockAccountService.remove.mockRejectedValue(error);
+      const nonExistentId = crypto.randomUUID();
 
       await expect(
-        controller.remove(999, mockAuthenticatedRequest),
+        controller.remove(nonExistentId, mockAuthenticatedRequest),
       ).rejects.toThrow(error);
-      expect(accountService.remove).toHaveBeenCalledWith(999, 1);
+      expect(accountService.remove).toHaveBeenCalledWith(
+        nonExistentId,
+        mockUserId,
+      );
     });
   });
 });

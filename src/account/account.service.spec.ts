@@ -9,8 +9,9 @@ import { UpdateAccountDto } from './dto/update-account.dto';
 describe('AccountService', () => {
   let service: AccountService;
 
+  const mockUserId = crypto.randomUUID();
   const mockUser = {
-    id: 1,
+    id: mockUserId,
     email: 'test@example.com',
     password: 'hashedpassword',
     firstName: 'John',
@@ -20,14 +21,15 @@ describe('AccountService', () => {
     updatedAt: new Date(),
   };
 
+  const mockAccountId = crypto.randomUUID();
   const mockAccount: Account = {
-    id: 1,
+    id: mockAccountId,
     name: 'Test Account',
     currency: 'USD',
     balance: 1000,
     description: 'Test description',
     isActive: true,
-    userId: 1,
+    userId: mockUserId,
     user: mockUser,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -70,22 +72,26 @@ describe('AccountService', () => {
     it('should create a new account with provided balance', async () => {
       const expectedAccount = {
         ...createAccountDto,
-        userId: 1,
+        userId: mockUserId,
         balance: 500,
       };
 
       mockRepository.create.mockReturnValue(expectedAccount);
-      mockRepository.save.mockResolvedValue({ ...expectedAccount, id: 2 });
+      const newAccountId = crypto.randomUUID();
+      mockRepository.save.mockResolvedValue({
+        ...expectedAccount,
+        id: newAccountId,
+      });
 
-      const result = await service.create(1, createAccountDto);
+      const result = await service.create(mockUserId, createAccountDto);
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         ...createAccountDto,
-        userId: 1,
+        userId: mockUserId,
         balance: 500,
       });
       expect(mockRepository.save).toHaveBeenCalledWith(expectedAccount);
-      expect(result).toEqual({ ...expectedAccount, id: 2 });
+      expect(result).toEqual({ ...expectedAccount, id: newAccountId });
     });
 
     it('should create a new account with default balance when not provided', async () => {
@@ -97,21 +103,28 @@ describe('AccountService', () => {
 
       const expectedAccount = {
         ...createAccountDtoNoBalance,
-        userId: 1,
+        userId: mockUserId,
         balance: 0,
       };
 
       mockRepository.create.mockReturnValue(expectedAccount);
-      mockRepository.save.mockResolvedValue({ ...expectedAccount, id: 2 });
+      const newAccountId = crypto.randomUUID();
+      mockRepository.save.mockResolvedValue({
+        ...expectedAccount,
+        id: newAccountId,
+      });
 
-      const result = await service.create(1, createAccountDtoNoBalance);
+      const result = await service.create(
+        mockUserId,
+        createAccountDtoNoBalance,
+      );
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         ...createAccountDtoNoBalance,
-        userId: 1,
+        userId: mockUserId,
         balance: 0,
       });
-      expect(result).toEqual({ ...expectedAccount, id: 2 });
+      expect(result).toEqual({ ...expectedAccount, id: newAccountId });
     });
   });
 
@@ -119,14 +132,14 @@ describe('AccountService', () => {
     it('should return all accounts for a user', async () => {
       const mockAccounts = [
         mockAccount,
-        { ...mockAccount, id: 2, name: 'Account 2' },
+        { ...mockAccount, id: crypto.randomUUID(), name: 'Account 2' },
       ];
       mockRepository.find.mockResolvedValue(mockAccounts);
 
-      const result = await service.findAllByUser(1);
+      const result = await service.findAllByUser(mockUserId);
 
       expect(mockRepository.find).toHaveBeenCalledWith({
-        where: { userId: 1 },
+        where: { userId: mockUserId },
         order: { createdAt: 'DESC' },
       });
       expect(result).toEqual(mockAccounts);
@@ -135,7 +148,7 @@ describe('AccountService', () => {
     it('should return empty array when no accounts found', async () => {
       mockRepository.find.mockResolvedValue([]);
 
-      const result = await service.findAllByUser(1);
+      const result = await service.findAllByUser(mockUserId);
 
       expect(result).toEqual([]);
     });
@@ -145,10 +158,10 @@ describe('AccountService', () => {
     it('should return an account when found', async () => {
       mockRepository.findOne.mockResolvedValue(mockAccount);
 
-      const result = await service.findOne(1, 1);
+      const result = await service.findOne(mockAccountId, mockUserId);
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, userId: 1 },
+        where: { id: mockAccountId, userId: mockUserId },
       });
       expect(result).toEqual(mockAccount);
     });
@@ -156,18 +169,24 @@ describe('AccountService', () => {
     it('should throw NotFoundException when account not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne(999, 1)).rejects.toThrow(NotFoundException);
+      const nonExistentId = crypto.randomUUID();
+      await expect(service.findOne(nonExistentId, mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 999, userId: 1 },
+        where: { id: nonExistentId, userId: mockUserId },
       });
     });
 
     it('should throw NotFoundException when account belongs to different user', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne(1, 999)).rejects.toThrow(NotFoundException);
+      const differentUserId = crypto.randomUUID();
+      await expect(
+        service.findOne(mockAccountId, differentUserId),
+      ).rejects.toThrow(NotFoundException);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, userId: 999 },
+        where: { id: mockAccountId, userId: differentUserId },
       });
     });
   });
@@ -184,10 +203,14 @@ describe('AccountService', () => {
       mockRepository.findOne.mockResolvedValue(mockAccount);
       mockRepository.save.mockResolvedValue(updatedAccount);
 
-      const result = await service.update(1, 1, updateAccountDto);
+      const result = await service.update(
+        mockAccountId,
+        mockUserId,
+        updateAccountDto,
+      );
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, userId: 1 },
+        where: { id: mockAccountId, userId: mockUserId },
       });
       expect(mockRepository.save).toHaveBeenCalledWith(updatedAccount);
       expect(result).toEqual(updatedAccount);
@@ -196,9 +219,10 @@ describe('AccountService', () => {
     it('should throw NotFoundException when account not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(999, 1, updateAccountDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      const nonExistentAccountId = crypto.randomUUID();
+      await expect(
+        service.update(nonExistentAccountId, mockUserId, updateAccountDto),
+      ).rejects.toThrow(NotFoundException);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
   });
@@ -208,10 +232,10 @@ describe('AccountService', () => {
       mockRepository.findOne.mockResolvedValue(mockAccount);
       mockRepository.remove.mockResolvedValue(mockAccount);
 
-      await service.remove(1, 1);
+      await service.remove(mockAccountId, mockUserId);
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, userId: 1 },
+        where: { id: mockAccountId, userId: mockUserId },
       });
       expect(mockRepository.remove).toHaveBeenCalledWith(mockAccount);
     });
@@ -219,7 +243,10 @@ describe('AccountService', () => {
     it('should throw NotFoundException when account not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.remove(999, 1)).rejects.toThrow(NotFoundException);
+      const nonExistentId2 = crypto.randomUUID();
+      await expect(service.remove(nonExistentId2, mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockRepository.remove).not.toHaveBeenCalled();
     });
   });
@@ -231,10 +258,14 @@ describe('AccountService', () => {
       mockRepository.findOne.mockResolvedValue(mockAccount);
       mockRepository.save.mockResolvedValue(updatedAccount);
 
-      const result = await service.updateBalance(1, 1, 2000);
+      const result = await service.updateBalance(
+        mockAccountId,
+        mockUserId,
+        2000,
+      );
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, userId: 1 },
+        where: { id: mockAccountId, userId: mockUserId },
       });
       expect(mockRepository.save).toHaveBeenCalledWith({
         ...mockAccount,
@@ -246,9 +277,10 @@ describe('AccountService', () => {
     it('should throw NotFoundException when account not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.updateBalance(999, 1, 2000)).rejects.toThrow(
-        NotFoundException,
-      );
+      const nonExistentId3 = crypto.randomUUID();
+      await expect(
+        service.updateBalance(nonExistentId3, mockUserId, 2000),
+      ).rejects.toThrow(NotFoundException);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
   });

@@ -17,15 +17,16 @@ describe('UserController', () => {
     canActivate: jest.fn(() => true),
   };
 
+  const mockUserId = crypto.randomUUID();
   const mockRequest: AuthenticatedRequest = {
     user: {
-      sub: 1,
+      sub: mockUserId,
       email: 'test@example.com',
     },
   } as AuthenticatedRequest;
 
   const mockUserProfile = {
-    id: 1,
+    id: mockUserId,
     email: 'test@example.com',
     firstName: 'John',
     lastName: 'Doe',
@@ -61,7 +62,7 @@ describe('UserController', () => {
       const result = await controller.getProfile(mockRequest);
 
       expect(result).toEqual(mockUserProfile);
-      expect(mockUserService.getProfile).toHaveBeenCalledWith(1);
+      expect(mockUserService.getProfile).toHaveBeenCalledWith(mockUserId);
     });
 
     it('should handle service errors', async () => {
@@ -74,7 +75,7 @@ describe('UserController', () => {
           mockRequest as any,
         ),
       ).rejects.toThrow(error);
-      expect(mockUserService.getProfile).toHaveBeenCalledWith(1);
+      expect(mockUserService.getProfile).toHaveBeenCalledWith(mockUserId);
     });
   });
 
@@ -85,7 +86,7 @@ describe('UserController', () => {
     };
 
     const updatedUser = {
-      id: 1,
+      id: mockUserId,
       email: 'test@example.com',
       password: 'hashedpassword',
       firstName: 'UpdatedJohn',
@@ -107,7 +108,7 @@ describe('UserController', () => {
       expect(result).toEqual(expectedProfile);
       expect(result).not.toHaveProperty('password');
       expect(mockUserService.updateProfile).toHaveBeenCalledWith(
-        1,
+        mockUserId,
         updateProfileDto,
       );
     });
@@ -124,7 +125,7 @@ describe('UserController', () => {
         ),
       ).rejects.toThrow(error);
       expect(mockUserService.updateProfile).toHaveBeenCalledWith(
-        1,
+        mockUserId,
         updateProfileDto,
       );
     });
@@ -151,7 +152,7 @@ describe('UserController', () => {
       const { password: _, ...expectedProfile } = partiallyUpdatedUser;
       expect(result).toEqual(expectedProfile);
       expect(mockUserService.updateProfile).toHaveBeenCalledWith(
-        1,
+        mockUserId,
         partialUpdateDto,
       );
     });

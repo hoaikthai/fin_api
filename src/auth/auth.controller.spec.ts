@@ -32,7 +32,7 @@ describe('AuthController', () => {
       };
 
       mockAuthService.register.mockResolvedValue({
-        id: 1,
+        id: crypto.randomUUID(),
         email: 'test@test.com',
         password: 'hashedpassword',
         firstName: undefined,
@@ -62,7 +62,7 @@ describe('AuthController', () => {
       };
 
       mockAuthService.register.mockResolvedValue({
-        id: 2,
+        id: crypto.randomUUID(),
         email: 'jane@test.com',
         password: 'hashedpassword',
         firstName: 'Jane',

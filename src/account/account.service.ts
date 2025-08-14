@@ -13,7 +13,7 @@ export class AccountService {
   ) {}
 
   async create(
-    userId: number,
+    userId: string,
     createAccountDto: CreateAccountDto,
   ): Promise<Account> {
     const account = this.accountRepository.create({
@@ -24,14 +24,14 @@ export class AccountService {
     return this.accountRepository.save(account);
   }
 
-  async findAllByUser(userId: number): Promise<Account[]> {
+  async findAllByUser(userId: string): Promise<Account[]> {
     return this.accountRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: number, userId: number): Promise<Account> {
+  async findOne(id: string, userId: string): Promise<Account> {
     const account = await this.accountRepository.findOne({
       where: { id, userId },
     });
@@ -44,8 +44,8 @@ export class AccountService {
   }
 
   async update(
-    id: number,
-    userId: number,
+    id: string,
+    userId: string,
     updateAccountDto: UpdateAccountDto,
   ): Promise<Account> {
     const account = await this.findOne(id, userId);
@@ -54,14 +54,14 @@ export class AccountService {
     return this.accountRepository.save(account);
   }
 
-  async remove(id: number, userId: number): Promise<void> {
+  async remove(id: string, userId: string): Promise<void> {
     const account = await this.findOne(id, userId);
     await this.accountRepository.remove(account);
   }
 
   async updateBalance(
-    id: number,
-    userId: number,
+    id: string,
+    userId: string,
     newBalance: number,
   ): Promise<Account> {
     const account = await this.findOne(id, userId);

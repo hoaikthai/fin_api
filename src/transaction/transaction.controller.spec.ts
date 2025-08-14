@@ -23,22 +23,25 @@ const mockJwtAuthGuard = {
 describe('TransactionController', () => {
   let controller: TransactionController;
 
+  const mockUserId = crypto.randomUUID();
   const mockAuthenticatedRequest = {
     user: {
-      sub: 1,
+      sub: mockUserId,
       email: 'test@example.com',
     },
   } as AuthenticatedRequest;
 
+  const mockTransactionId = crypto.randomUUID();
+  const mockAccountId = crypto.randomUUID();
   const mockTransaction = {
-    id: 1,
+    id: mockTransactionId,
     type: TransactionType.EXPENSE,
     amount: 100,
     description: 'Test expense',
     category: 'Food',
-    accountId: 1,
+    accountId: mockAccountId,
     toAccountId: null,
-    userId: 1,
+    userId: mockUserId,
     transactionDate: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -68,7 +71,7 @@ describe('TransactionController', () => {
       amount: 500,
       description: 'Test income',
       category: 'Salary',
-      accountId: 1,
+      accountId: mockAccountId,
     };
 
     it('should create a new transaction', async () => {
@@ -85,7 +88,7 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.create).toHaveBeenCalledWith(
         createTransactionDto,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(expectedTransaction);
     });
@@ -95,8 +98,8 @@ describe('TransactionController', () => {
         type: TransactionType.TRANSFER,
         amount: 200,
         description: 'Test transfer',
-        accountId: 1,
-        toAccountId: 2,
+        accountId: mockAccountId,
+        toAccountId: crypto.randomUUID(),
       };
 
       const expectedTransaction = { ...mockTransaction, ...createTransferDto };
@@ -109,7 +112,7 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.create).toHaveBeenCalledWith(
         createTransferDto,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(expectedTransaction);
     });
@@ -122,14 +125,14 @@ describe('TransactionController', () => {
 
       const result = await controller.findAll(mockAuthenticatedRequest);
 
-      expect(mockTransactionService.findAll).toHaveBeenCalledWith(1);
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual(mockTransactions);
     });
   });
 
   describe('findByAccount', () => {
     it('should return transactions for a specific account', async () => {
-      const accountId = 1;
+      const accountId = mockAccountId;
       const mockTransactions = [mockTransaction];
       mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
 
@@ -140,13 +143,13 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
         accountId,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(mockTransactions);
     });
 
     it('should handle ParseIntPipe for accountId parameter', async () => {
-      const accountId = 2;
+      const accountId = crypto.randomUUID();
       const mockTransactions = [mockTransaction];
       mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
 
@@ -157,7 +160,7 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
         accountId,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(mockTransactions);
     });
@@ -165,7 +168,7 @@ describe('TransactionController', () => {
 
   describe('findOne', () => {
     it('should return a specific transaction', async () => {
-      const transactionId = 1;
+      const transactionId = mockTransactionId;
       mockTransactionService.findOne.mockResolvedValue(mockTransaction);
 
       const result = await controller.findOne(
@@ -175,13 +178,13 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.findOne).toHaveBeenCalledWith(
         transactionId,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(mockTransaction);
     });
 
     it('should handle ParseIntPipe for id parameter', async () => {
-      const transactionId = 2;
+      const transactionId = crypto.randomUUID();
       mockTransactionService.findOne.mockResolvedValue(mockTransaction);
 
       const result = await controller.findOne(
@@ -191,7 +194,7 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.findOne).toHaveBeenCalledWith(
         transactionId,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(mockTransaction);
     });
@@ -204,7 +207,7 @@ describe('TransactionController', () => {
     };
 
     it('should update a transaction', async () => {
-      const transactionId = 1;
+      const transactionId = mockTransactionId;
       const updatedTransaction = {
         ...mockTransaction,
         ...updateTransactionDto,
@@ -220,13 +223,13 @@ describe('TransactionController', () => {
       expect(mockTransactionService.update).toHaveBeenCalledWith(
         transactionId,
         updateTransactionDto,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(updatedTransaction);
     });
 
     it('should handle partial updates', async () => {
-      const transactionId = 1;
+      const transactionId = mockTransactionId;
       const partialUpdateDto: UpdateTransactionDto = {
         amount: 150,
       };
@@ -242,13 +245,13 @@ describe('TransactionController', () => {
       expect(mockTransactionService.update).toHaveBeenCalledWith(
         transactionId,
         partialUpdateDto,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(updatedTransaction);
     });
 
     it('should handle type change updates', async () => {
-      const transactionId = 1;
+      const transactionId = mockTransactionId;
       const typeUpdateDto: UpdateTransactionDto = {
         type: TransactionType.INCOME,
       };
@@ -267,7 +270,7 @@ describe('TransactionController', () => {
       expect(mockTransactionService.update).toHaveBeenCalledWith(
         transactionId,
         typeUpdateDto,
-        1,
+        mockUserId,
       );
       expect(result).toEqual(updatedTransaction);
     });
@@ -275,7 +278,7 @@ describe('TransactionController', () => {
 
   describe('remove', () => {
     it('should delete a transaction', async () => {
-      const transactionId = 1;
+      const transactionId = mockTransactionId;
       mockTransactionService.remove.mockResolvedValue(undefined);
 
       const result = await controller.remove(
@@ -285,13 +288,13 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.remove).toHaveBeenCalledWith(
         transactionId,
-        1,
+        mockUserId,
       );
       expect(result).toBeUndefined();
     });
 
     it('should handle ParseIntPipe for id parameter', async () => {
-      const transactionId = 2;
+      const transactionId = crypto.randomUUID();
       mockTransactionService.remove.mockResolvedValue(undefined);
 
       const result = await controller.remove(
@@ -301,7 +304,7 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.remove).toHaveBeenCalledWith(
         transactionId,
-        1,
+        mockUserId,
       );
       expect(result).toBeUndefined();
     });
@@ -319,19 +322,22 @@ describe('TransactionController', () => {
 
       await controller.findAll(mockAuthenticatedRequest);
 
-      expect(mockTransactionService.findAll).toHaveBeenCalledWith(1);
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(mockUserId);
     });
 
     it('should use user ID consistently across all methods', async () => {
+      const differentUserId = crypto.randomUUID();
       const differentUserRequest = {
-        user: { sub: 5, email: 'other@example.com' },
+        user: { sub: differentUserId, email: 'other@example.com' },
       } as AuthenticatedRequest;
 
       mockTransactionService.findAll.mockResolvedValue([]);
 
       await controller.findAll(differentUserRequest);
 
-      expect(mockTransactionService.findAll).toHaveBeenCalledWith(5);
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        differentUserId,
+      );
     });
   });
 });

@@ -21,7 +21,7 @@ export class TransactionService {
 
   async create(
     createTransactionDto: CreateTransactionDto,
-    userId: number,
+    userId: string,
   ): Promise<Transaction> {
     const { accountId, toAccountId, type } = createTransactionDto;
 
@@ -68,7 +68,7 @@ export class TransactionService {
     return this.transactionRepository.save(transaction);
   }
 
-  async findAll(userId: number): Promise<Transaction[]> {
+  async findAll(userId: string): Promise<Transaction[]> {
     return this.transactionRepository.find({
       where: { userId },
       relations: ['account', 'toAccount'],
@@ -76,7 +76,7 @@ export class TransactionService {
     });
   }
 
-  async findOne(id: number, userId: number): Promise<Transaction> {
+  async findOne(id: string, userId: string): Promise<Transaction> {
     const transaction = await this.transactionRepository.findOne({
       where: { id, userId },
       relations: ['account', 'toAccount'],
@@ -90,9 +90,9 @@ export class TransactionService {
   }
 
   async update(
-    id: number,
+    id: string,
     updateTransactionDto: UpdateTransactionDto,
-    userId: number,
+    userId: string,
   ): Promise<Transaction> {
     const transaction = await this.findOne(id, userId);
 
@@ -144,14 +144,14 @@ export class TransactionService {
     return this.transactionRepository.save(transaction);
   }
 
-  async remove(id: number, userId: number): Promise<void> {
+  async remove(id: string, userId: string): Promise<void> {
     const transaction = await this.findOne(id, userId);
     await this.transactionRepository.remove(transaction);
   }
 
   async findByAccount(
-    accountId: number,
-    userId: number,
+    accountId: string,
+    userId: string,
   ): Promise<Transaction[]> {
     const account = await this.accountRepository.findOne({
       where: { id: accountId, userId },

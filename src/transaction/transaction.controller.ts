@@ -8,7 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
-  ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import type { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -36,7 +36,7 @@ export class TransactionController {
 
   @Get('account/:accountId')
   findByAccount(
-    @Param('accountId', ParseIntPipe) accountId: number,
+    @Param('accountId', ParseUUIDPipe) accountId: string,
     @Request() req: AuthenticatedRequest,
   ) {
     return this.transactionService.findByAccount(accountId, req.user.sub);
@@ -44,7 +44,7 @@ export class TransactionController {
 
   @Get(':id')
   findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
   ) {
     return this.transactionService.findOne(id, req.user.sub);
@@ -52,7 +52,7 @@ export class TransactionController {
 
   @Patch(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTransactionDto: UpdateTransactionDto,
     @Request() req: AuthenticatedRequest,
   ) {
@@ -65,7 +65,7 @@ export class TransactionController {
 
   @Delete(':id')
   remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
   ) {
     return this.transactionService.remove(id, req.user.sub);

@@ -1,11 +1,11 @@
 export class AccountResponseDto {
-  id: number;
+  id: string;
   name: string;
   currency: string;
   balance: number;
   description: string;
   isActive: boolean;
-  userId: number;
+  userId: string;
   createdAt: Date;
   updatedAt: Date;
 }

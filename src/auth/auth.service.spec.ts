@@ -39,7 +39,7 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should throw if user already exists', async () => {
       userService.findByEmail.mockResolvedValue({
-        id: 1,
+        id: crypto.randomUUID(),
         email: 'test@test.com',
         password: 'hashed',
       });
@@ -50,8 +50,9 @@ describe('AuthService', () => {
 
     it('should create user without profile fields if not exists', async () => {
       userService.findByEmail.mockResolvedValue(null);
+      const mockUserId = crypto.randomUUID();
       userService.create.mockResolvedValue({
-        id: 1,
+        id: mockUserId,
         email: 'test@test.com',
         password: 'hashed',
       });
@@ -64,7 +65,7 @@ describe('AuthService', () => {
         lastName: undefined,
       });
       expect(user).toEqual({
-        id: 1,
+        id: mockUserId,
         email: 'test@test.com',
         password: 'hashed',
       });
@@ -72,8 +73,9 @@ describe('AuthService', () => {
 
     it('should create user with profile fields', async () => {
       userService.findByEmail.mockResolvedValue(null);
+      const mockUserId = crypto.randomUUID();
       userService.create.mockResolvedValue({
-        id: 1,
+        id: mockUserId,
         email: 'test@test.com',
         password: 'hashed',
         firstName: 'John',
@@ -93,7 +95,7 @@ describe('AuthService', () => {
         lastName: 'Doe',
       });
       expect(user).toEqual({
-        id: 1,
+        id: mockUserId,
         email: 'test@test.com',
         password: 'hashed',
         firstName: 'John',
@@ -111,7 +113,7 @@ describe('AuthService', () => {
     });
     it('should throw if password invalid', async () => {
       userService.findByEmail.mockResolvedValue({
-        id: 1,
+        id: crypto.randomUUID(),
         email: 'test@test.com',
         password: 'hashed',
       });
@@ -121,15 +123,16 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
     it('should return user if password valid', async () => {
+      const mockUserId = crypto.randomUUID();
       userService.findByEmail.mockResolvedValue({
-        id: 1,
+        id: mockUserId,
         email: 'test@test.com',
         password: 'hashed',
       });
       (compare as jest.Mock).mockResolvedValue(true);
       const user = await service.validateUser('test@test.com', 'pass');
       expect(user).toEqual({
-        id: 1,
+        id: mockUserId,
         email: 'test@test.com',
         password: 'hashed',
       });
@@ -138,8 +141,9 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return access_token if credentials valid', async () => {
+      const mockUserId = crypto.randomUUID();
       userService.findByEmail.mockResolvedValue({
-        id: 1,
+        id: mockUserId,
         email: 'test@test.com',
         password: 'hashed',
       });
@@ -150,7 +154,7 @@ describe('AuthService', () => {
       expect(userService.findByEmail).toHaveBeenCalledWith('test@test.com');
       expect(compare).toHaveBeenCalledWith('pass', 'hashed');
       const expectedPayload: JwtPayload = {
-        sub: 1,
+        sub: mockUserId,
         email: 'test@test.com',
       };
       expect(jwtService.signAsync).toHaveBeenCalledWith(expectedPayload);

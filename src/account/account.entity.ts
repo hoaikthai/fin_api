@@ -11,8 +11,8 @@ import { User } from '../user/user.entity';
 
 @Entity()
 export class Account {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   name: string;
@@ -29,8 +29,8 @@ export class Account {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column()
-  userId: number;
+  @Column('uuid')
+  userId: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })

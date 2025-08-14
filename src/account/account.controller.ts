@@ -8,7 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
-  ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -36,7 +36,7 @@ export class AccountController {
 
   @Get(':id')
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
   ) {
     return this.accountService.findOne(id, req.user.sub);
@@ -44,7 +44,7 @@ export class AccountController {
 
   @Patch(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
     @Body() updateAccountDto: UpdateAccountDto,
   ) {
@@ -53,7 +53,7 @@ export class AccountController {
 
   @Delete(':id')
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
   ) {
     await this.accountService.remove(id, req.user.sub);

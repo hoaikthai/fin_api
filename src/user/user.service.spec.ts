@@ -7,8 +7,9 @@ import { User } from './user.entity';
 describe('UserService', () => {
   let service: UserService;
 
+  const mockUserId = crypto.randomUUID();
   const mockUser: User = {
-    id: 1,
+    id: mockUserId,
     email: 'test@example.com',
     password: 'hashedpassword',
     firstName: 'John',
@@ -67,18 +68,18 @@ describe('UserService', () => {
     it('should return a user when found', async () => {
       mockRepository.findOne.mockResolvedValue(mockUser);
 
-      const result = await service.findById(1);
+      const result = await service.findById(mockUserId);
 
       expect(result).toEqual(mockUser);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id: mockUserId },
       });
     });
 
     it('should return null when user not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.findById(999);
+      const result = await service.findById(crypto.randomUUID());
 
       expect(result).toBeNull();
     });
@@ -94,13 +95,14 @@ describe('UserService', () => {
       };
 
       mockRepository.create.mockReturnValue(userData);
-      mockRepository.save.mockResolvedValue({ ...userData, id: 2 });
+      const newUserId = crypto.randomUUID();
+      mockRepository.save.mockResolvedValue({ ...userData, id: newUserId });
 
       const result = await service.create(userData);
 
       expect(mockRepository.create).toHaveBeenCalledWith(userData);
       expect(mockRepository.save).toHaveBeenCalledWith(userData);
-      expect(result).toEqual({ ...userData, id: 2 });
+      expect(result).toEqual({ ...userData, id: newUserId });
     });
   });
 
@@ -112,9 +114,11 @@ describe('UserService', () => {
       mockRepository.findOne.mockResolvedValue(mockUser);
       mockRepository.save.mockResolvedValue(updatedUser);
 
-      const result = await service.updateProfile(1, profileData);
+      const result = await service.updateProfile(mockUserId, profileData);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(updatedUser);
       expect(result).toEqual(updatedUser);
     });
@@ -123,7 +127,7 @@ describe('UserService', () => {
       mockRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.updateProfile(999, { firstName: 'Test' }),
+        service.updateProfile(crypto.randomUUID(), { firstName: 'Test' }),
       ).rejects.toThrow(NotFoundException);
 
       expect(mockRepository.save).not.toHaveBeenCalled();
@@ -134,7 +138,7 @@ describe('UserService', () => {
     it('should return user profile without password', async () => {
       mockRepository.findOne.mockResolvedValue(mockUser);
 
-      const result = await service.getProfile(1);
+      const result = await service.getProfile(mockUserId);
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...expectedProfile } = mockUser;
@@ -145,7 +149,9 @@ describe('UserService', () => {
     it('should throw NotFoundException when user not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getProfile(999)).rejects.toThrow(NotFoundException);
+      await expect(service.getProfile(crypto.randomUUID())).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

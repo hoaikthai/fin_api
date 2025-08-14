@@ -6,6 +6,7 @@ import {
   IsString,
   IsPositive,
   IsDateString,
+  IsUUID,
 } from 'class-validator';
 import { TransactionType } from '../transaction.entity';
 
@@ -26,13 +27,13 @@ export class CreateTransactionDto {
   @IsOptional()
   category?: string;
 
-  @IsNumber()
+  @IsUUID()
   @IsNotEmpty()
-  accountId: number;
+  accountId: string;
 
-  @IsNumber()
+  @IsUUID()
   @IsOptional()
-  toAccountId?: number;
+  toAccountId?: string;
 
   @IsDateString()
   @IsOptional()

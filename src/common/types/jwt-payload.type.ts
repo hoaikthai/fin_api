@@ -19,7 +19,7 @@
  */
 export interface JwtPayload {
   /** Subject (User ID) - standard JWT claim */
-  sub: number;
+  sub: string;
   /** User email address */
   email: string;
 }

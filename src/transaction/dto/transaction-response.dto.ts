@@ -1,13 +1,13 @@
 import { TransactionType } from '../transaction.entity';
 
 export class TransactionResponseDto {
-  id: number;
+  id: string;
   type: TransactionType;
   amount: number;
   description: string;
   category: string;
-  accountId: number;
-  toAccountId?: number;
+  accountId: string;
+  toAccountId?: string;
   transactionDate: Date;
   createdAt: Date;
   updatedAt: Date;
