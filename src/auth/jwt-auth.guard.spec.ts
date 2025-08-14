@@ -5,17 +5,18 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
-  let jwtService: JwtService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
   };
 
-  const createMockContext = (headers: Record<string, string> = {}): ExecutionContext => {
+  const createMockContext = (
+    headers: Record<string, string> = {},
+  ): ExecutionContext => {
     const mockRequest = {
       headers,
       user: undefined,
-    };
+    } as Record<string, any>;
 
     return {
       switchToHttp: () => ({
@@ -36,7 +37,6 @@ describe('JwtAuthGuard', () => {
     }).compile();
 
     guard = module.get<JwtAuthGuard>(JwtAuthGuard);
-    jwtService = module.get<JwtService>(JwtService);
   });
 
   afterEach(() => {
@@ -55,11 +55,16 @@ describe('JwtAuthGuard', () => {
       const result = await guard.canActivate(context);
 
       expect(result).toBe(true);
-      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid.jwt.token', {
-        secret: process.env.JWT_SECRET || 'default_jwt_secret',
-      });
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(
+        'valid.jwt.token',
+        {
+          secret: process.env.JWT_SECRET || 'default_jwt_secret',
+        },
+      );
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const request = context.switchToHttp().getRequest();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(request.user).toEqual(payload);
     });
 
@@ -76,9 +81,12 @@ describe('JwtAuthGuard', () => {
 
       await guard.canActivate(context);
 
-      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid.jwt.token', {
-        secret: 'custom_secret',
-      });
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(
+        'valid.jwt.token',
+        {
+          secret: 'custom_secret',
+        },
+      );
 
       process.env.JWT_SECRET = originalEnv;
     });
@@ -86,7 +94,9 @@ describe('JwtAuthGuard', () => {
     it('should throw UnauthorizedException when no authorization header', async () => {
       const context = createMockContext({});
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verifyAsync).not.toHaveBeenCalled();
     });
 
@@ -95,7 +105,9 @@ describe('JwtAuthGuard', () => {
         authorization: 'InvalidFormat token',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verifyAsync).not.toHaveBeenCalled();
     });
 
@@ -104,7 +116,9 @@ describe('JwtAuthGuard', () => {
         authorization: 'token.without.bearer',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verifyAsync).not.toHaveBeenCalled();
     });
 
@@ -115,10 +129,15 @@ describe('JwtAuthGuard', () => {
 
       mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('invalid.jwt.token', {
-        secret: process.env.JWT_SECRET || 'default_jwt_secret',
-      });
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(
+        'invalid.jwt.token',
+        {
+          secret: process.env.JWT_SECRET || 'default_jwt_secret',
+        },
+      );
     });
 
     it('should handle empty Bearer token', async () => {
@@ -126,7 +145,9 @@ describe('JwtAuthGuard', () => {
         authorization: 'Bearer ',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verifyAsync).not.toHaveBeenCalled();
     });
 
@@ -135,7 +156,9 @@ describe('JwtAuthGuard', () => {
         authorization: 'Bearer',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verifyAsync).not.toHaveBeenCalled();
     });
   });

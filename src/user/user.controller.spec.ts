@@ -3,10 +3,10 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AuthenticatedRequest } from '../common/types';
 
 describe('UserController', () => {
   let controller: UserController;
-  let userService: UserService;
 
   const mockUserService = {
     getProfile: jest.fn(),
@@ -17,12 +17,12 @@ describe('UserController', () => {
     canActivate: jest.fn(() => true),
   };
 
-  const mockRequest = {
+  const mockRequest: AuthenticatedRequest = {
     user: {
       sub: 1,
       email: 'test@example.com',
     },
-  };
+  } as AuthenticatedRequest;
 
   const mockUserProfile = {
     id: 1,
@@ -48,7 +48,6 @@ describe('UserController', () => {
       .compile();
 
     controller = module.get<UserController>(UserController);
-    userService = module.get<UserService>(UserService);
   });
 
   afterEach(() => {
@@ -59,7 +58,7 @@ describe('UserController', () => {
     it('should return user profile', async () => {
       mockUserService.getProfile.mockResolvedValue(mockUserProfile);
 
-      const result = await controller.getProfile(mockRequest as any);
+      const result = await controller.getProfile(mockRequest);
 
       expect(result).toEqual(mockUserProfile);
       expect(mockUserService.getProfile).toHaveBeenCalledWith(1);
@@ -69,7 +68,12 @@ describe('UserController', () => {
       const error = new Error('User not found');
       mockUserService.getProfile.mockRejectedValue(error);
 
-      await expect(controller.getProfile(mockRequest as any)).rejects.toThrow(error);
+      await expect(
+        controller.getProfile(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          mockRequest as any,
+        ),
+      ).rejects.toThrow(error);
       expect(mockUserService.getProfile).toHaveBeenCalledWith(1);
     });
   });
@@ -93,12 +97,19 @@ describe('UserController', () => {
     it('should update user profile and return profile without password', async () => {
       mockUserService.updateProfile.mockResolvedValue(updatedUser);
 
-      const result = await controller.updateProfile(mockRequest as any, updateProfileDto);
+      const result = await controller.updateProfile(
+        mockRequest,
+        updateProfileDto,
+      );
 
-      const { password, ...expectedProfile } = updatedUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...expectedProfile } = updatedUser;
       expect(result).toEqual(expectedProfile);
       expect(result).not.toHaveProperty('password');
-      expect(mockUserService.updateProfile).toHaveBeenCalledWith(1, updateProfileDto);
+      expect(mockUserService.updateProfile).toHaveBeenCalledWith(
+        1,
+        updateProfileDto,
+      );
     });
 
     it('should handle service errors during update', async () => {
@@ -106,9 +117,16 @@ describe('UserController', () => {
       mockUserService.updateProfile.mockRejectedValue(error);
 
       await expect(
-        controller.updateProfile(mockRequest as any, updateProfileDto),
+        controller.updateProfile(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          mockRequest as any,
+          updateProfileDto,
+        ),
       ).rejects.toThrow(error);
-      expect(mockUserService.updateProfile).toHaveBeenCalledWith(1, updateProfileDto);
+      expect(mockUserService.updateProfile).toHaveBeenCalledWith(
+        1,
+        updateProfileDto,
+      );
     });
 
     it('should handle partial updates', async () => {
@@ -124,11 +142,18 @@ describe('UserController', () => {
 
       mockUserService.updateProfile.mockResolvedValue(partiallyUpdatedUser);
 
-      const result = await controller.updateProfile(mockRequest as any, partialUpdateDto);
+      const result = await controller.updateProfile(
+        mockRequest,
+        partialUpdateDto,
+      );
 
-      const { password, ...expectedProfile } = partiallyUpdatedUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...expectedProfile } = partiallyUpdatedUser;
       expect(result).toEqual(expectedProfile);
-      expect(mockUserService.updateProfile).toHaveBeenCalledWith(1, partialUpdateDto);
+      expect(mockUserService.updateProfile).toHaveBeenCalledWith(
+        1,
+        partialUpdateDto,
+      );
     });
   });
 });

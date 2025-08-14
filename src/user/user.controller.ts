@@ -3,13 +3,7 @@ import { UserService } from './user.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserProfileDto } from './dto/user-profile.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
-interface AuthenticatedRequest extends Request {
-  user: {
-    sub: number;
-    email: string;
-  };
-}
+import type { AuthenticatedRequest } from '../common/types';
 
 @Controller('user')
 @UseGuards(JwtAuthGuard)

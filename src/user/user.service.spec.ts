@@ -1,13 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 
 describe('UserService', () => {
   let service: UserService;
-  let repository: Repository<User>;
 
   const mockUser: User = {
     id: 1,
@@ -15,6 +13,7 @@ describe('UserService', () => {
     password: 'hashedpassword',
     firstName: 'John',
     lastName: 'Doe',
+    accounts: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -37,7 +36,6 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
-    repository = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   afterEach(() => {
@@ -127,7 +125,7 @@ describe('UserService', () => {
       await expect(
         service.updateProfile(999, { firstName: 'Test' }),
       ).rejects.toThrow(NotFoundException);
-      
+
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
   });
@@ -138,7 +136,8 @@ describe('UserService', () => {
 
       const result = await service.getProfile(1);
 
-      const { password, ...expectedProfile } = mockUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...expectedProfile } = mockUser;
       expect(result).toEqual(expectedProfile);
       expect(result).not.toHaveProperty('password');
     });

@@ -80,9 +80,13 @@ Required environment variables (see .env.example):
 - **NestJS Standards**: Use modules, providers, DTOs, decorators, and guards
 - **TypeScript**: Strict typing enabled, decorators for entities and controllers  
 - **Entity Naming**: PascalCase for classes, camelCase for properties
-- **Database**: TypeORM migrations for schema changes (never use synchronize in production)
+- **Database**: TypeORM migrations for schema changes (never use synchronize)
 - **Authentication**: JWT-based with bcryptjs hashing, service-layer validation
 - **Testing**: Jest for unit/e2e tests, maintain test coverage for new features
+- **Prefer**
+  - ?? over ||
+- **TypeScript**
+  - Run typecheck after each implementation
 
 ## Key Files and Structure
 

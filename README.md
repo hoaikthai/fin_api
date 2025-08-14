@@ -9,7 +9,7 @@ A robust, scalable backend for personal finance management, built with NestJS an
 - [x] User registration & authentication (JWT)
 - [x] User profile management
 - [ ] Multi-currency support
-- [ ] Account management (bank, cash, credit, etc.)
+- [x] Account management (bank, cash, credit, etc.)
 - [ ] Transaction tracking (income, expense, transfer)
 - [ ] Category & tag management
 - [ ] Budget planning and tracking

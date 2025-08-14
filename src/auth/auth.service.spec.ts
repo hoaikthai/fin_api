@@ -79,7 +79,12 @@ describe('AuthService', () => {
         lastName: 'Doe',
       });
       (hash as jest.Mock).mockResolvedValue('hashed');
-      const user = await service.register('test@test.com', 'pass', 'John', 'Doe');
+      const user = await service.register(
+        'test@test.com',
+        'pass',
+        'John',
+        'Doe',
+      );
       expect(userService.create).toHaveBeenCalledWith({
         email: 'test@test.com',
         password: 'hashed',
