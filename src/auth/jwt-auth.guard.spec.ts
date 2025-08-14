@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import type { JwtPayload } from '../common/types';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
@@ -45,7 +46,7 @@ describe('JwtAuthGuard', () => {
 
   describe('canActivate', () => {
     it('should return true for valid JWT token', async () => {
-      const payload = { sub: 1, email: 'test@example.com' };
+      const payload: JwtPayload = { sub: 1, email: 'test@example.com' };
       const context = createMockContext({
         authorization: 'Bearer valid.jwt.token',
       });
@@ -72,7 +73,7 @@ describe('JwtAuthGuard', () => {
       const originalEnv = process.env.JWT_SECRET;
       process.env.JWT_SECRET = 'custom_secret';
 
-      const payload = { sub: 1, email: 'test@example.com' };
+      const payload: JwtPayload = { sub: 1, email: 'test@example.com' };
       const context = createMockContext({
         authorization: 'Bearer valid.jwt.token',
       });

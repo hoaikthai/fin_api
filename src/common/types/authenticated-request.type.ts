@@ -1,15 +1,16 @@
 import { Request } from 'express';
+import type { JwtPayload } from './jwt-payload.type';
 
 /**
  * Request object with authenticated user information from JWT token.
- * 
+ *
  * @interface AuthenticatedRequest
  * @extends {Request}
- * 
+ *
  * @example
  * ```typescript
  * import type { AuthenticatedRequest } from '../common/types';
- * 
+ *
  * @Controller('example')
  * @UseGuards(JwtAuthGuard)
  * export class ExampleController {
@@ -23,10 +24,6 @@ import { Request } from 'express';
  * ```
  */
 export interface AuthenticatedRequest extends Request {
-  user: {
-    /** User ID from JWT token (sub claim) */
-    sub: number;
-    /** User email from JWT token */
-    email: string;
-  };
+  /** JWT payload containing authenticated user information */
+  user: JwtPayload;
 }

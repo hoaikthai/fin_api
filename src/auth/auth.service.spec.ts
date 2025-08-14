@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { compare, hash } from 'bcryptjs';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
+import type { JwtPayload } from '../common/types';
 
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
@@ -148,10 +149,11 @@ describe('AuthService', () => {
       const result = await service.login('test@test.com', 'pass');
       expect(userService.findByEmail).toHaveBeenCalledWith('test@test.com');
       expect(compare).toHaveBeenCalledWith('pass', 'hashed');
-      expect(jwtService.signAsync).toHaveBeenCalledWith({
+      const expectedPayload: JwtPayload = {
         sub: 1,
         email: 'test@test.com',
-      });
+      };
+      expect(jwtService.signAsync).toHaveBeenCalledWith(expectedPayload);
       expect(result).toEqual({ access_token: 'jwt-token' });
     });
 
