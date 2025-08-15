@@ -11,7 +11,7 @@ A robust, scalable backend for personal finance management, built with NestJS an
 - [ ] Multi-currency support
 - [x] Account management (bank, cash, credit, etc.)
 - [x] Transaction tracking (income, expense, transfer)
-- [ ] Category & tag management
+- [x] Category & tag management
 - [ ] Budget planning and tracking
 - [ ] Recurring transactions
 - [ ] Financial goals & savings tracking
