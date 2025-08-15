@@ -9,7 +9,6 @@ export class TransactionResponseDto {
   categoryId: string;
   category?: CategoryResponseDto;
   accountId: string;
-  toAccountId?: string;
   transactionDate: Date;
   createdAt: Date;
   updatedAt: Date;

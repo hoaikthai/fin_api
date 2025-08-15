@@ -80,7 +80,7 @@ Required environment variables (see .env.example):
 - **NestJS Standards**: Use modules, providers, DTOs, decorators, and guards
 - **TypeScript**: Strict typing enabled, decorators for entities and controllers  
 - **Entity Naming**: PascalCase for classes, camelCase for properties
-- **Database**: TypeORM migrations for schema changes (never use synchronize), located in `migrations/`
+- **Database**: TypeORM migrations for schema changes (never use synchronize), located in `src/migrations/`
 - **Authentication**: JWT-based with bcryptjs hashing, service-layer validation
 - **Testing**: Jest for unit/e2e tests, maintain test coverage for new features
 - **Prefer**
@@ -94,7 +94,13 @@ Required environment variables (see .env.example):
 - `src/app.module.ts` - Root module importing all feature modules
 - `src/ormconfig.module.ts` - Centralized TypeORM configuration
 - `typeorm.config.ts` - Migration configuration with environment loading
-- `migrations/` - Database migration files
+- `src/migrations/` - Database migration files
 - Feature modules in `src/auth/` and `src/user/` follow NestJS conventions
+
+## Business rules
+
+- For transfer transactions, we do as follow:
+  - Create an expense transaction with the amount to be transferred for the source account, the transaction category is Outgoing transfer
+  - Create an income transaction with the amount to be transferred for the destination account, the transaction category is Incoming transfer
 
 When adding new features, follow the existing modular structure and ensure proper database migrations are created for schema changes.

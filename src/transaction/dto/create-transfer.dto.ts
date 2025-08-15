@@ -1,5 +1,4 @@
 import {
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -8,12 +7,15 @@ import {
   IsDateString,
   IsUUID,
 } from 'class-validator';
-import { TransactionType } from '../../common/enums';
 
-export class CreateTransactionDto {
-  @IsEnum(TransactionType)
+export class CreateTransferDto {
+  @IsUUID()
   @IsNotEmpty()
-  type: TransactionType;
+  sourceAccountId: string;
+
+  @IsUUID()
+  @IsNotEmpty()
+  destinationAccountId: string;
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
@@ -22,14 +24,6 @@ export class CreateTransactionDto {
   @IsString()
   @IsNotEmpty()
   description: string;
-
-  @IsUUID()
-  @IsNotEmpty()
-  categoryId: string;
-
-  @IsUUID()
-  @IsNotEmpty()
-  accountId: string;
 
   @IsDateString()
   @IsOptional()

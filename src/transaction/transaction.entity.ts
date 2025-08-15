@@ -32,33 +32,33 @@ export class Transaction {
   @Column('uuid')
   categoryId: string;
 
-  @ManyToOne(() => Category, (category) => category.transactions)
+  @ManyToOne(() => Category, (category) => category.transactions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
   @Column('uuid')
   userId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column('uuid')
   accountId: string;
 
-  @ManyToOne(() => Account)
+  @ManyToOne(() => Account, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'accountId' })
   account: Account;
 
-  @Column('uuid', { nullable: true })
-  toAccountId: string | null;
-
-  @ManyToOne(() => Account)
-  @JoinColumn({ name: 'toAccountId' })
-  toAccount: Account | null;
-
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   transactionDate: Date;
+
+  @Column('uuid', { nullable: true })
+  relatedTransactionId?: string | null;
+
+  @ManyToOne(() => Transaction, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'relatedTransactionId' })
+  relatedTransaction?: Transaction | null;
 
   @CreateDateColumn()
   createdAt: Date;

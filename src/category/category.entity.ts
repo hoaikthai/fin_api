@@ -32,7 +32,7 @@ export class Category {
   @Column('uuid', { nullable: true })
   userId: string | null;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User | null;
 
@@ -41,14 +41,15 @@ export class Category {
 
   @ManyToOne(() => Category, (category) => category.children, {
     nullable: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'parentId' })
   parent: Category | null;
 
-  @OneToMany(() => Category, (category) => category.parent)
+  @OneToMany(() => Category, (category) => category.parent, { onDelete: 'CASCADE' })
   children: Category[];
 
-  @OneToMany(() => Transaction, (transaction) => transaction.category)
+  @OneToMany(() => Transaction, (transaction) => transaction.category, { onDelete: 'CASCADE' })
   transactions: Transaction[];
 
   @CreateDateColumn()

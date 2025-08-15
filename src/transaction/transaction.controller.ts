@@ -13,6 +13,7 @@ import {
 import { TransactionService } from './transaction.service';
 import type { CreateTransactionDto } from './dto/create-transaction.dto';
 import type { UpdateTransactionDto } from './dto/update-transaction.dto';
+import type { CreateTransferDto } from './dto/create-transfer.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../common/types';
 
@@ -69,5 +70,13 @@ export class TransactionController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.transactionService.remove(id, req.user.sub);
+  }
+
+  @Post('transfer')
+  transfer(
+    @Body() createTransferDto: CreateTransferDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.transactionService.transfer(createTransferDto, req.user.sub);
   }
 }

@@ -40,7 +40,6 @@ describe('TransactionController', () => {
     description: 'Test expense',
     categoryId: crypto.randomUUID(),
     accountId: mockAccountId,
-    toAccountId: null,
     userId: mockUserId,
     transactionDate: new Date(),
     createdAt: new Date(),
@@ -88,31 +87,6 @@ describe('TransactionController', () => {
 
       expect(mockTransactionService.create).toHaveBeenCalledWith(
         createTransactionDto,
-        mockUserId,
-      );
-      expect(result).toEqual(expectedTransaction);
-    });
-
-    it('should handle transfer transaction creation', async () => {
-      const createTransferDto: CreateTransactionDto = {
-        type: TransactionType.TRANSFER,
-        amount: 200,
-        description: 'Test transfer',
-        accountId: mockAccountId,
-        toAccountId: crypto.randomUUID(),
-        categoryId: crypto.randomUUID(),
-      };
-
-      const expectedTransaction = { ...mockTransaction, ...createTransferDto };
-      mockTransactionService.create.mockResolvedValue(expectedTransaction);
-
-      const result = await controller.create(
-        createTransferDto,
-        mockAuthenticatedRequest,
-      );
-
-      expect(mockTransactionService.create).toHaveBeenCalledWith(
-        createTransferDto,
         mockUserId,
       );
       expect(result).toEqual(expectedTransaction);

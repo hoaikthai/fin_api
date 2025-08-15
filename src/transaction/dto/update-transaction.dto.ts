@@ -31,10 +31,6 @@ export class UpdateTransactionDto {
   @IsOptional()
   accountId?: string;
 
-  @IsUUID()
-  @IsOptional()
-  toAccountId?: string;
-
   @IsDateString()
   @IsOptional()
   transactionDate?: Date;

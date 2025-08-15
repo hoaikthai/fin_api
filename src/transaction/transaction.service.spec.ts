@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { Transaction } from './transaction.entity';
 import { TransactionType } from '../common/enums';
@@ -38,20 +38,6 @@ describe('TransactionService', () => {
     updatedAt: new Date(),
   };
 
-  const mockToAccountId = crypto.randomUUID();
-  const mockToAccount: Account = {
-    id: mockToAccountId,
-    name: 'Destination Account',
-    currency: 'USD',
-    balance: 500,
-    description: 'Destination account',
-    isActive: true,
-    userId: mockUserId,
-    user: mockUser,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
   const mockCategoryId = crypto.randomUUID();
   const mockCategory: Category = {
     id: mockCategoryId,
@@ -78,9 +64,7 @@ describe('TransactionService', () => {
     category: mockCategory,
     userId: mockUserId,
     accountId: mockAccountId,
-    toAccountId: null,
     account: mockAccount,
-    toAccount: null,
     user: mockUser,
     transactionDate: new Date(),
     createdAt: new Date(),
@@ -158,36 +142,6 @@ describe('TransactionService', () => {
       expect(result).toEqual(mockTransaction);
     });
 
-    it('should create a transfer transaction with destination account', async () => {
-      const createTransferDto: CreateTransactionDto = {
-        type: TransactionType.TRANSFER,
-        amount: 100,
-        description: 'Test transfer',
-        categoryId: crypto.randomUUID(),
-        accountId: mockAccountId,
-        toAccountId: mockToAccountId,
-      };
-
-      const transferCategory = { ...mockCategory, type: TransactionType.TRANSFER };
-      mockAccountRepository.findOne
-        .mockResolvedValueOnce(mockAccount)
-        .mockResolvedValueOnce(mockToAccount);
-      mockCategoryRepository.findOne.mockResolvedValue(transferCategory);
-      mockTransactionRepository.create.mockReturnValue(mockTransaction);
-      mockTransactionRepository.save.mockResolvedValue(mockTransaction);
-
-      const result = await service.create(createTransferDto, mockUserId);
-
-      expect(mockAccountRepository.findOne).toHaveBeenCalledTimes(2);
-      expect(mockAccountRepository.findOne).toHaveBeenNthCalledWith(1, {
-        where: { id: mockAccountId, userId: mockUserId },
-      });
-      expect(mockAccountRepository.findOne).toHaveBeenNthCalledWith(2, {
-        where: { id: mockToAccountId, userId: mockUserId },
-      });
-      expect(result).toEqual(mockTransaction);
-    });
-
     it('should use custom transaction date when provided', async () => {
       const customDate = new Date('2023-01-15');
       const createDtoWithDate: CreateTransactionDto = {
@@ -218,81 +172,6 @@ describe('TransactionService', () => {
       );
       expect(mockTransactionRepository.save).not.toHaveBeenCalled();
     });
-
-    it('should throw BadRequestException for transfer without destination account', async () => {
-      const createTransferDto: CreateTransactionDto = {
-        type: TransactionType.TRANSFER,
-        amount: 100,
-        description: 'Test transfer',
-        categoryId: crypto.randomUUID(),
-        accountId: mockAccountId,
-      };
-
-      const transferCategory = { ...mockCategory, type: TransactionType.TRANSFER };
-      mockAccountRepository.findOne.mockResolvedValue(mockAccount);
-      mockCategoryRepository.findOne.mockResolvedValue(transferCategory);
-
-      await expect(
-        service.create(createTransferDto, mockUserId),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw NotFoundException when destination account not found', async () => {
-      const createTransferDto: CreateTransactionDto = {
-        type: TransactionType.TRANSFER,
-        amount: 100,
-        description: 'Test transfer',
-        categoryId: crypto.randomUUID(),
-        accountId: mockAccountId,
-        toAccountId: crypto.randomUUID(),
-      };
-
-      mockAccountRepository.findOne
-        .mockResolvedValueOnce(mockAccount)
-        .mockResolvedValueOnce(null);
-
-      await expect(
-        service.create(createTransferDto, mockUserId),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException for transfer to same account', async () => {
-      const createTransferDto: CreateTransactionDto = {
-        type: TransactionType.TRANSFER,
-        amount: 100,
-        description: 'Test transfer',
-        categoryId: crypto.randomUUID(),
-        accountId: mockAccountId,
-        toAccountId: mockAccountId,
-      };
-
-      const transferCategory = { ...mockCategory, type: TransactionType.TRANSFER };
-      mockAccountRepository.findOne.mockResolvedValue(mockAccount);
-      mockCategoryRepository.findOne.mockResolvedValue(transferCategory);
-
-      await expect(
-        service.create(createTransferDto, mockUserId),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for non-transfer with destination account', async () => {
-      const createIncomeWithToAccount: CreateTransactionDto = {
-        type: TransactionType.INCOME,
-        amount: 100,
-        description: 'Test income',
-        categoryId: crypto.randomUUID(),
-        accountId: mockAccountId,
-        toAccountId: mockToAccountId,
-      };
-
-      const incomeCategory = { ...mockCategory, type: TransactionType.INCOME };
-      mockAccountRepository.findOne.mockResolvedValue(mockAccount);
-      mockCategoryRepository.findOne.mockResolvedValue(incomeCategory);
-
-      await expect(
-        service.create(createIncomeWithToAccount, mockUserId),
-      ).rejects.toThrow(BadRequestException);
-    });
   });
 
   describe('findAll', () => {
@@ -304,7 +183,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.find).toHaveBeenCalledWith({
         where: { userId: mockUserId },
-        relations: ['account', 'toAccount', 'category'],
+        relations: ['account', 'category'],
         order: { transactionDate: 'DESC' },
       });
       expect(result).toEqual(mockTransactions);
@@ -319,7 +198,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockTransactionId, userId: mockUserId },
-        relations: ['account', 'toAccount', 'category'],
+        relations: ['account', 'category'],
       });
       expect(result).toEqual(mockTransaction);
     });
@@ -356,7 +235,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockTransactionId, userId: mockUserId },
-        relations: ['account', 'toAccount', 'category'],
+        relations: ['account', 'category'],
       });
       expect(mockTransactionRepository.save).toHaveBeenCalledWith(
         expect.objectContaining(updateTransactionDto),
@@ -365,18 +244,19 @@ describe('TransactionService', () => {
     });
 
     it('should validate new account when accountId is updated', async () => {
+      const newAccountId = crypto.randomUUID();
       const updateWithAccount: UpdateTransactionDto = {
-        accountId: mockToAccountId,
+        accountId: newAccountId,
       };
 
       mockTransactionRepository.findOne.mockResolvedValue(mockTransaction);
-      mockAccountRepository.findOne.mockResolvedValue(mockToAccount);
+      mockAccountRepository.findOne.mockResolvedValue(mockAccount);
       mockTransactionRepository.save.mockResolvedValue(mockTransaction);
 
       await service.update(mockTransactionId, updateWithAccount, mockUserId);
 
       expect(mockAccountRepository.findOne).toHaveBeenCalledWith({
-        where: { id: mockToAccountId, userId: mockUserId },
+        where: { id: newAccountId, userId: mockUserId },
       });
     });
 
@@ -400,26 +280,6 @@ describe('TransactionService', () => {
         service.update(mockTransactionId, updateWithAccount, mockUserId),
       ).rejects.toThrow(NotFoundException);
     });
-
-    it('should throw BadRequestException for transfer without destination account', async () => {
-      const updateToTransfer: UpdateTransactionDto = {
-        type: TransactionType.TRANSFER,
-      };
-
-      const mockExpenseTransaction = {
-        ...mockTransaction,
-        type: TransactionType.EXPENSE,
-        toAccountId: null,
-      } as Transaction;
-
-      mockTransactionRepository.findOne.mockResolvedValue(
-        mockExpenseTransaction,
-      );
-
-      await expect(
-        service.update(mockTransactionId, updateToTransfer, mockUserId),
-      ).rejects.toThrow(BadRequestException);
-    });
   });
 
   describe('remove', () => {
@@ -431,7 +291,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockTransactionId, userId: mockUserId },
-        relations: ['account', 'toAccount', 'category'],
+        relations: ['account', 'category'],
       });
       expect(mockTransactionRepository.remove).toHaveBeenCalledWith(
         mockTransaction,
@@ -460,11 +320,8 @@ describe('TransactionService', () => {
         where: { id: mockAccountId, userId: mockUserId },
       });
       expect(mockTransactionRepository.find).toHaveBeenCalledWith({
-        where: [
-          { accountId: mockAccountId, userId: mockUserId },
-          { toAccountId: mockAccountId, userId: mockUserId },
-        ],
-        relations: ['account', 'toAccount', 'category'],
+        where: { accountId: mockAccountId, userId: mockUserId },
+        relations: ['account', 'category'],
         order: { transactionDate: 'DESC' },
       });
       expect(result).toEqual(mockTransactions);

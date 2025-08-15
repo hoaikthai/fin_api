@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Transaction } from './transaction.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { CreateTransferDto } from './dto/create-transfer.dto';
 import { Account } from '../account/account.entity';
 import { Category } from '../category/category.entity';
 import { TransactionType } from '../common/enums';
@@ -27,7 +28,7 @@ export class TransactionService {
     createTransactionDto: CreateTransactionDto,
     userId: string,
   ): Promise<Transaction> {
-    const { accountId, toAccountId, type, categoryId } = createTransactionDto;
+    const { accountId, type, categoryId } = createTransactionDto;
 
     const account = await this.accountRepository.findOne({
       where: { id: accountId, userId },
@@ -55,32 +56,6 @@ export class TransactionService {
       );
     }
 
-    if (type === TransactionType.TRANSFER) {
-      if (!toAccountId) {
-        throw new BadRequestException(
-          'Transfer transactions require a destination account',
-        );
-      }
-
-      const toAccount = await this.accountRepository.findOne({
-        where: { id: toAccountId, userId },
-      });
-
-      if (!toAccount) {
-        throw new NotFoundException('Destination account not found');
-      }
-
-      if (accountId === toAccountId) {
-        throw new BadRequestException('Cannot transfer to the same account');
-      }
-    }
-
-    if (type !== TransactionType.TRANSFER && toAccountId) {
-      throw new BadRequestException(
-        'Only transfer transactions can have a destination account',
-      );
-    }
-
     const transaction = this.transactionRepository.create({
       ...createTransactionDto,
       userId,
@@ -93,7 +68,7 @@ export class TransactionService {
   async findAll(userId: string): Promise<Transaction[]> {
     return this.transactionRepository.find({
       where: { userId },
-      relations: ['account', 'toAccount', 'category'],
+      relations: ['account', 'category'],
       order: { transactionDate: 'DESC' },
     });
   }
@@ -101,7 +76,7 @@ export class TransactionService {
   async findOne(id: string, userId: string): Promise<Transaction> {
     const transaction = await this.transactionRepository.findOne({
       where: { id, userId },
-      relations: ['account', 'toAccount', 'category'],
+      relations: ['account', 'category'],
     });
 
     if (!transaction) {
@@ -128,40 +103,6 @@ export class TransactionService {
       }
     }
 
-    if (updateTransactionDto.toAccountId) {
-      const toAccount = await this.accountRepository.findOne({
-        where: { id: updateTransactionDto.toAccountId, userId },
-      });
-
-      if (!toAccount) {
-        throw new NotFoundException('Destination account not found');
-      }
-
-      if (updateTransactionDto.accountId === updateTransactionDto.toAccountId) {
-        throw new BadRequestException('Cannot transfer to the same account');
-      }
-    }
-
-    const updatedType = updateTransactionDto.type ?? transaction.type;
-    if (
-      updatedType === TransactionType.TRANSFER &&
-      !updateTransactionDto.toAccountId &&
-      !transaction.toAccountId
-    ) {
-      throw new BadRequestException(
-        'Transfer transactions require a destination account',
-      );
-    }
-
-    if (
-      updatedType !== TransactionType.TRANSFER &&
-      updateTransactionDto.toAccountId
-    ) {
-      throw new BadRequestException(
-        'Only transfer transactions can have a destination account',
-      );
-    }
-
     Object.assign(transaction, updateTransactionDto);
     return this.transactionRepository.save(transaction);
   }
@@ -184,12 +125,100 @@ export class TransactionService {
     }
 
     return this.transactionRepository.find({
-      where: [
-        { accountId, userId },
-        { toAccountId: accountId, userId },
-      ],
-      relations: ['account', 'toAccount', 'category'],
+      where: { accountId, userId },
+      relations: ['account', 'category'],
       order: { transactionDate: 'DESC' },
     });
+  }
+
+  async transfer(
+    createTransferDto: CreateTransferDto,
+    userId: string,
+  ): Promise<{
+    sourceTransaction: Transaction;
+    destinationTransaction: Transaction;
+  }> {
+    const {
+      sourceAccountId,
+      destinationAccountId,
+      amount,
+      description,
+      transactionDate,
+    } = createTransferDto;
+
+    if (sourceAccountId === destinationAccountId) {
+      throw new BadRequestException(
+        'Source and destination accounts cannot be the same',
+      );
+    }
+
+    const sourceAccount = await this.accountRepository.findOne({
+      where: { id: sourceAccountId, userId },
+    });
+
+    if (!sourceAccount) {
+      throw new NotFoundException('Source account not found');
+    }
+
+    const destinationAccount = await this.accountRepository.findOne({
+      where: { id: destinationAccountId, userId },
+    });
+
+    if (!destinationAccount) {
+      throw new NotFoundException('Destination account not found');
+    }
+
+    const outgoingTransferCategory = await this.categoryRepository.findOne({
+      where: {
+        name: 'Outgoing transfer',
+        isDefault: true,
+        type: TransactionType.EXPENSE,
+      },
+    });
+
+    if (!outgoingTransferCategory) {
+      throw new NotFoundException('Outgoing transfer category not found');
+    }
+
+    const incomingTransferCategory = await this.categoryRepository.findOne({
+      where: {
+        name: 'Incoming transfer',
+        isDefault: true,
+        type: TransactionType.INCOME,
+      },
+    });
+
+    if (!incomingTransferCategory) {
+      throw new NotFoundException('Incoming transfer category not found');
+    }
+
+    const sourceTransactionData: CreateTransactionDto = {
+      type: TransactionType.EXPENSE,
+      amount,
+      description,
+      categoryId: outgoingTransferCategory.id,
+      accountId: sourceAccountId,
+      transactionDate,
+    };
+
+    const destinationTransactionData: CreateTransactionDto = {
+      type: TransactionType.INCOME,
+      amount,
+      description,
+      categoryId: incomingTransferCategory.id,
+      accountId: destinationAccountId,
+      transactionDate,
+    };
+
+    const sourceTransaction = await this.create(sourceTransactionData, userId);
+    const destinationTransaction = await this.create(
+      destinationTransactionData,
+      userId,
+    );
+
+    return {
+      sourceTransaction,
+      destinationTransaction,
+    };
   }
 }
