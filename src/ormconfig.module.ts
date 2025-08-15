@@ -9,7 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       port: parseInt(process.env.DB_PORT ?? '5432'),
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASS || 'password',
-      database: process.env.DB_NAME || 'ger_fin_db',
+      database: process.env.DB_NAME || 'fin_db',
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       synchronize: false,
     }),

@@ -8,7 +8,7 @@ export default new DataSource({
   port: parseInt(process.env.DB_PORT || '5432', 10),
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASS || 'postgres',
-  database: process.env.DB_NAME || 'ger_fin',
+  database: process.env.DB_NAME || 'fin_db',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/src/migrations/*.ts'],
   logging: true,

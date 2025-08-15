@@ -46,7 +46,7 @@ Copy `.env.example` to `.env` and fill in your secrets and DB config:
 DB_HOST=localhost
 DB_USER=postgres
 DB_PASS=password
-DB_NAME=ger_fin_db
+DB_NAME=fin_db
 JWT_SECRET=secret
 ```
 
