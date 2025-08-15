@@ -46,8 +46,9 @@ describe('JwtAuthGuard', () => {
 
   describe('canActivate', () => {
     it('should return true for valid JWT token', async () => {
+      const userId = crypto.randomUUID();
       const payload: JwtPayload = {
-        sub: crypto.randomUUID(),
+        sub: userId,
         email: 'test@example.com',
       };
       const context = createMockContext({
@@ -76,8 +77,9 @@ describe('JwtAuthGuard', () => {
       const originalEnv = process.env.JWT_SECRET;
       process.env.JWT_SECRET = 'custom_secret';
 
+      const userId = crypto.randomUUID();
       const payload: JwtPayload = {
-        sub: crypto.randomUUID(),
+        sub: userId,
         email: 'test@example.com',
       };
       const context = createMockContext({

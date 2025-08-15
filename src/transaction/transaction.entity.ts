@@ -9,12 +9,8 @@ import {
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Account } from '../account/account.entity';
-
-export enum TransactionType {
-  INCOME = 'income',
-  EXPENSE = 'expense',
-  TRANSFER = 'transfer',
-}
+import { Category } from '../category/category.entity';
+import { TransactionType } from '../common/enums';
 
 @Entity()
 export class Transaction {
@@ -33,8 +29,12 @@ export class Transaction {
   @Column()
   description: string;
 
-  @Column({ nullable: true })
-  category: string;
+  @Column('uuid')
+  categoryId: string;
+
+  @ManyToOne(() => Category, (category) => category.transactions)
+  @JoinColumn({ name: 'categoryId' })
+  category: Category;
 
   @Column('uuid')
   userId: string;

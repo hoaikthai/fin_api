@@ -5,10 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Transaction, TransactionType } from './transaction.entity';
+import { Transaction } from './transaction.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Account } from '../account/account.entity';
+import { Category } from '../category/category.entity';
+import { TransactionType } from '../common/enums';
 
 @Injectable()
 export class TransactionService {
@@ -17,13 +19,15 @@ export class TransactionService {
     private transactionRepository: Repository<Transaction>,
     @InjectRepository(Account)
     private accountRepository: Repository<Account>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
   ) {}
 
   async create(
     createTransactionDto: CreateTransactionDto,
     userId: string,
   ): Promise<Transaction> {
-    const { accountId, toAccountId, type } = createTransactionDto;
+    const { accountId, toAccountId, type, categoryId } = createTransactionDto;
 
     const account = await this.accountRepository.findOne({
       where: { id: accountId, userId },
@@ -31,6 +35,24 @@ export class TransactionService {
 
     if (!account) {
       throw new NotFoundException('Account not found');
+    }
+
+    const category = await this.categoryRepository.findOne({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+
+    if (!category.isDefault && category.userId !== userId) {
+      throw new BadRequestException('Access denied to this category');
+    }
+
+    if (category.type !== type) {
+      throw new BadRequestException(
+        'Category type must match transaction type',
+      );
     }
 
     if (type === TransactionType.TRANSFER) {
@@ -71,7 +93,7 @@ export class TransactionService {
   async findAll(userId: string): Promise<Transaction[]> {
     return this.transactionRepository.find({
       where: { userId },
-      relations: ['account', 'toAccount'],
+      relations: ['account', 'toAccount', 'category'],
       order: { transactionDate: 'DESC' },
     });
   }
@@ -79,7 +101,7 @@ export class TransactionService {
   async findOne(id: string, userId: string): Promise<Transaction> {
     const transaction = await this.transactionRepository.findOne({
       where: { id, userId },
-      relations: ['account', 'toAccount'],
+      relations: ['account', 'toAccount', 'category'],
     });
 
     if (!transaction) {
@@ -166,7 +188,7 @@ export class TransactionService {
         { accountId, userId },
         { toAccountId: accountId, userId },
       ],
-      relations: ['account', 'toAccount'],
+      relations: ['account', 'toAccount', 'category'],
       order: { transactionDate: 'DESC' },
     });
   }

@@ -7,7 +7,7 @@ import {
   IsDateString,
   IsUUID,
 } from 'class-validator';
-import { TransactionType } from '../transaction.entity';
+import { TransactionType } from '../../common/enums';
 
 export class UpdateTransactionDto {
   @IsEnum(TransactionType)
@@ -23,9 +23,9 @@ export class UpdateTransactionDto {
   @IsOptional()
   description?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  category?: string;
+  categoryId?: string;
 
   @IsUUID()
   @IsOptional()

@@ -1,11 +1,13 @@
-import { TransactionType } from '../transaction.entity';
+import { TransactionType } from '../../common/enums';
+import { CategoryResponseDto } from '../../category/dto/category-response.dto';
 
 export class TransactionResponseDto {
   id: string;
   type: TransactionType;
   amount: number;
   description: string;
-  category: string;
+  categoryId: string;
+  category?: CategoryResponseDto;
   accountId: string;
   toAccountId?: string;
   transactionDate: Date;

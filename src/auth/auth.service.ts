@@ -52,7 +52,10 @@ export class AuthService {
     password: string,
   ): Promise<{ access_token: string }> {
     const user = await this.validateUser(email, password);
-    const payload: JwtPayload = { sub: user.id, email: user.email };
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+    };
     const access_token = await this.jwtService.signAsync(payload);
     return { access_token };
   }

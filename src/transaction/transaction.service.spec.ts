@@ -2,8 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { Transaction, TransactionType } from './transaction.entity';
+import { Transaction } from './transaction.entity';
+import { TransactionType } from '../common/enums';
 import { Account } from '../account/account.entity';
+import { Category } from '../category/category.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
@@ -50,13 +52,30 @@ describe('TransactionService', () => {
     updatedAt: new Date(),
   };
 
+  const mockCategoryId = crypto.randomUUID();
+  const mockCategory: Category = {
+    id: mockCategoryId,
+    name: 'Test Category',
+    type: TransactionType.EXPENSE,
+    isDefault: false,
+    userId: mockUserId,
+    user: mockUser,
+    parentId: null,
+    parent: null,
+    children: [],
+    transactions: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
   const mockTransactionId = crypto.randomUUID();
   const mockTransaction: Transaction = {
     id: mockTransactionId,
     type: TransactionType.EXPENSE,
     amount: 100,
     description: 'Test expense',
-    category: 'Food',
+    categoryId: mockCategoryId,
+    category: mockCategory,
     userId: mockUserId,
     accountId: mockAccountId,
     toAccountId: null,
@@ -80,6 +99,10 @@ describe('TransactionService', () => {
     findOne: jest.fn(),
   };
 
+  const mockCategoryRepository = {
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -91,6 +114,10 @@ describe('TransactionService', () => {
         {
           provide: getRepositoryToken(Account),
           useValue: mockAccountRepository,
+        },
+        {
+          provide: getRepositoryToken(Category),
+          useValue: mockCategoryRepository,
         },
       ],
     }).compile();
@@ -107,12 +134,14 @@ describe('TransactionService', () => {
       type: TransactionType.INCOME,
       amount: 200,
       description: 'Test income',
-      category: 'Salary',
+      categoryId: crypto.randomUUID(),
       accountId: mockAccountId,
     };
 
     it('should create an income transaction', async () => {
+      const incomeCategory = { ...mockCategory, type: TransactionType.INCOME };
       mockAccountRepository.findOne.mockResolvedValue(mockAccount);
+      mockCategoryRepository.findOne.mockResolvedValue(incomeCategory);
       mockTransactionRepository.create.mockReturnValue(mockTransaction);
       mockTransactionRepository.save.mockResolvedValue(mockTransaction);
 
@@ -134,13 +163,16 @@ describe('TransactionService', () => {
         type: TransactionType.TRANSFER,
         amount: 100,
         description: 'Test transfer',
+        categoryId: crypto.randomUUID(),
         accountId: mockAccountId,
         toAccountId: mockToAccountId,
       };
 
+      const transferCategory = { ...mockCategory, type: TransactionType.TRANSFER };
       mockAccountRepository.findOne
         .mockResolvedValueOnce(mockAccount)
         .mockResolvedValueOnce(mockToAccount);
+      mockCategoryRepository.findOne.mockResolvedValue(transferCategory);
       mockTransactionRepository.create.mockReturnValue(mockTransaction);
       mockTransactionRepository.save.mockResolvedValue(mockTransaction);
 
@@ -163,7 +195,9 @@ describe('TransactionService', () => {
         transactionDate: customDate,
       };
 
+      const incomeCategory = { ...mockCategory, type: TransactionType.INCOME };
       mockAccountRepository.findOne.mockResolvedValue(mockAccount);
+      mockCategoryRepository.findOne.mockResolvedValue(incomeCategory);
       mockTransactionRepository.create.mockReturnValue(mockTransaction);
       mockTransactionRepository.save.mockResolvedValue(mockTransaction);
 
@@ -190,10 +224,13 @@ describe('TransactionService', () => {
         type: TransactionType.TRANSFER,
         amount: 100,
         description: 'Test transfer',
+        categoryId: crypto.randomUUID(),
         accountId: mockAccountId,
       };
 
+      const transferCategory = { ...mockCategory, type: TransactionType.TRANSFER };
       mockAccountRepository.findOne.mockResolvedValue(mockAccount);
+      mockCategoryRepository.findOne.mockResolvedValue(transferCategory);
 
       await expect(
         service.create(createTransferDto, mockUserId),
@@ -205,6 +242,7 @@ describe('TransactionService', () => {
         type: TransactionType.TRANSFER,
         amount: 100,
         description: 'Test transfer',
+        categoryId: crypto.randomUUID(),
         accountId: mockAccountId,
         toAccountId: crypto.randomUUID(),
       };
@@ -223,11 +261,14 @@ describe('TransactionService', () => {
         type: TransactionType.TRANSFER,
         amount: 100,
         description: 'Test transfer',
+        categoryId: crypto.randomUUID(),
         accountId: mockAccountId,
         toAccountId: mockAccountId,
       };
 
+      const transferCategory = { ...mockCategory, type: TransactionType.TRANSFER };
       mockAccountRepository.findOne.mockResolvedValue(mockAccount);
+      mockCategoryRepository.findOne.mockResolvedValue(transferCategory);
 
       await expect(
         service.create(createTransferDto, mockUserId),
@@ -239,11 +280,14 @@ describe('TransactionService', () => {
         type: TransactionType.INCOME,
         amount: 100,
         description: 'Test income',
+        categoryId: crypto.randomUUID(),
         accountId: mockAccountId,
         toAccountId: mockToAccountId,
       };
 
+      const incomeCategory = { ...mockCategory, type: TransactionType.INCOME };
       mockAccountRepository.findOne.mockResolvedValue(mockAccount);
+      mockCategoryRepository.findOne.mockResolvedValue(incomeCategory);
 
       await expect(
         service.create(createIncomeWithToAccount, mockUserId),
@@ -260,7 +304,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.find).toHaveBeenCalledWith({
         where: { userId: mockUserId },
-        relations: ['account', 'toAccount'],
+        relations: ['account', 'toAccount', 'category'],
         order: { transactionDate: 'DESC' },
       });
       expect(result).toEqual(mockTransactions);
@@ -275,7 +319,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockTransactionId, userId: mockUserId },
-        relations: ['account', 'toAccount'],
+        relations: ['account', 'toAccount', 'category'],
       });
       expect(result).toEqual(mockTransaction);
     });
@@ -292,7 +336,7 @@ describe('TransactionService', () => {
   describe('update', () => {
     const updateTransactionDto: UpdateTransactionDto = {
       description: 'Updated description',
-      category: 'Updated category',
+      categoryId: crypto.randomUUID(),
     };
 
     it('should update and return the transaction', async () => {
@@ -312,7 +356,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockTransactionId, userId: mockUserId },
-        relations: ['account', 'toAccount'],
+        relations: ['account', 'toAccount', 'category'],
       });
       expect(mockTransactionRepository.save).toHaveBeenCalledWith(
         expect.objectContaining(updateTransactionDto),
@@ -387,7 +431,7 @@ describe('TransactionService', () => {
 
       expect(mockTransactionRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockTransactionId, userId: mockUserId },
-        relations: ['account', 'toAccount'],
+        relations: ['account', 'toAccount', 'category'],
       });
       expect(mockTransactionRepository.remove).toHaveBeenCalledWith(
         mockTransaction,
@@ -420,7 +464,7 @@ describe('TransactionService', () => {
           { accountId: mockAccountId, userId: mockUserId },
           { toAccountId: mockAccountId, userId: mockUserId },
         ],
-        relations: ['account', 'toAccount'],
+        relations: ['account', 'toAccount', 'category'],
         order: { transactionDate: 'DESC' },
       });
       expect(result).toEqual(mockTransactions);

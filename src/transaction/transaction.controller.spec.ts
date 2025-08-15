@@ -4,7 +4,7 @@ import { TransactionService } from './transaction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { TransactionType } from './transaction.entity';
+import { TransactionType } from '../common/enums';
 import { AuthenticatedRequest } from '../common/types';
 
 const mockTransactionService = {
@@ -38,7 +38,7 @@ describe('TransactionController', () => {
     type: TransactionType.EXPENSE,
     amount: 100,
     description: 'Test expense',
-    category: 'Food',
+    categoryId: crypto.randomUUID(),
     accountId: mockAccountId,
     toAccountId: null,
     userId: mockUserId,
@@ -70,7 +70,7 @@ describe('TransactionController', () => {
       type: TransactionType.INCOME,
       amount: 500,
       description: 'Test income',
-      category: 'Salary',
+      categoryId: crypto.randomUUID(),
       accountId: mockAccountId,
     };
 
@@ -100,6 +100,7 @@ describe('TransactionController', () => {
         description: 'Test transfer',
         accountId: mockAccountId,
         toAccountId: crypto.randomUUID(),
+        categoryId: crypto.randomUUID(),
       };
 
       const expectedTransaction = { ...mockTransaction, ...createTransferDto };
@@ -203,7 +204,7 @@ describe('TransactionController', () => {
   describe('update', () => {
     const updateTransactionDto: UpdateTransactionDto = {
       description: 'Updated description',
-      category: 'Updated category',
+      categoryId: crypto.randomUUID(),
     };
 
     it('should update a transaction', async () => {

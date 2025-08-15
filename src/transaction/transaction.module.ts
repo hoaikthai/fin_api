@@ -4,9 +4,10 @@ import { TransactionService } from './transaction.service';
 import { TransactionController } from './transaction.controller';
 import { Transaction } from './transaction.entity';
 import { Account } from '../account/account.entity';
+import { Category } from '../category/category.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, Account])],
+  imports: [TypeOrmModule.forFeature([Transaction, Account, Category])],
   controllers: [TransactionController],
   providers: [TransactionService],
   exports: [TransactionService],
