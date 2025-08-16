@@ -12,15 +12,15 @@ import { UserProfileDto } from './dto/user-profile.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../common/types';
 
-@ApiTags('User')
+@ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
-@Controller('user')
+@Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get('profile')
-  @ApiOperation({ summary: 'Get user profile' })
+  @Get('me')
+  @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({
     status: 200,
     description: 'User profile retrieved successfully',
@@ -33,8 +33,8 @@ export class UserController {
     return this.userService.getProfile(req.user.sub);
   }
 
-  @Put('profile')
-  @ApiOperation({ summary: 'Update user profile' })
+  @Put('me')
+  @ApiOperation({ summary: 'Update current user profile' })
   @ApiBody({ type: UpdateProfileDto })
   @ApiResponse({
     status: 200,

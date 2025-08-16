@@ -77,7 +77,9 @@ Required environment variables (see .env.example):
 
 ## Code Conventions
 
-- **NestJS Standards**: Use modules, providers, DTOs, decorators, and guards
+- **NestJS Standards**:
+  - Use modules, providers, DTOs, decorators, and guards
+  - Follow RESTful convention for endpoints
 - **TypeScript**: Strict typing enabled, decorators for entities and controllers
 - **Entity Naming**: PascalCase for classes, camelCase for properties
 - **Database**:

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
+import { TransactionService } from '../transaction/transaction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
@@ -16,6 +17,10 @@ const mockAccountService = {
 
 const mockJwtAuthGuard = {
   canActivate: jest.fn(() => true),
+};
+
+const mockTransactionService = {
+  findByAccount: jest.fn(),
 };
 
 describe('AccountController', () => {
@@ -46,7 +51,10 @@ describe('AccountController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountController],
-      providers: [{ provide: AccountService, useValue: mockAccountService }],
+      providers: [
+        { provide: AccountService, useValue: mockAccountService },
+        { provide: TransactionService, useValue: mockTransactionService },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue(mockJwtAuthGuard)

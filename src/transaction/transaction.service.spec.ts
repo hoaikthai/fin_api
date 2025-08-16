@@ -182,11 +182,18 @@ describe('TransactionService', () => {
 
       const result = await service.findAll(mockUserId);
 
-      expect(mockTransactionRepository.find).toHaveBeenCalledWith({
-        where: { userId: mockUserId },
-        relations: ['account', 'category'],
-        order: { transactionDate: 'DESC' },
-      });
+      expect(mockTransactionRepository.find).toHaveBeenCalledTimes(1);
+      const findCallArgs = mockTransactionRepository.find.mock.calls[0] as [
+        {
+          where: { userId: string; transactionDate: unknown };
+          relations: string[];
+          order: { transactionDate: 'DESC' };
+        },
+      ];
+      expect(findCallArgs[0].where.userId).toBe(mockUserId);
+      expect(findCallArgs[0].where.transactionDate).toBeDefined();
+      expect(findCallArgs[0].relations).toEqual(['account', 'category']);
+      expect(findCallArgs[0].order).toEqual({ transactionDate: 'DESC' });
       expect(result).toEqual(mockTransactions);
     });
   });
@@ -320,11 +327,24 @@ describe('TransactionService', () => {
       expect(mockAccountRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockAccountId, userId: mockUserId },
       });
-      expect(mockTransactionRepository.find).toHaveBeenCalledWith({
-        where: { accountId: mockAccountId, userId: mockUserId },
-        relations: ['account', 'category'],
-        order: { transactionDate: 'DESC' },
-      });
+
+      expect(mockTransactionRepository.find).toHaveBeenCalledTimes(1);
+      const findCallArgs = mockTransactionRepository.find.mock.calls[0] as [
+        {
+          where: {
+            accountId: string;
+            userId: string;
+            transactionDate: unknown;
+          };
+          relations: string[];
+          order: { transactionDate: 'DESC' };
+        },
+      ];
+      expect(findCallArgs[0].where.accountId).toBe(mockAccountId);
+      expect(findCallArgs[0].where.userId).toBe(mockUserId);
+      expect(findCallArgs[0].where.transactionDate).toBeDefined();
+      expect(findCallArgs[0].relations).toEqual(['account', 'category']);
+      expect(findCallArgs[0].order).toEqual({ transactionDate: 'DESC' });
       expect(result).toEqual(mockTransactions);
     });
 

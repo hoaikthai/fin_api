@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,11 +18,17 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TransactionService } from '../transaction/transaction.service';
+import {
+  TimeRangeQueryDto,
+  TimePeriod,
+} from '../transaction/dto/time-range-query.dto';
 import type { AuthenticatedRequest } from '../common/types';
 
 @ApiTags('Accounts')
@@ -29,7 +36,10 @@ import type { AuthenticatedRequest } from '../common/types';
 @Controller('accounts')
 @UseGuards(JwtAuthGuard)
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly transactionService: TransactionService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new account' })
@@ -93,5 +103,41 @@ export class AccountController {
   ) {
     await this.accountService.remove(id, req.user.sub);
     return { message: 'Account deleted successfully' };
+  }
+
+  @Get(':id/transactions')
+  @ApiOperation({ summary: 'Get transactions for a specific account' })
+  @ApiParam({ name: 'id', description: 'Account UUID', format: 'uuid' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['day', 'week', 'month', 'quarter', 'year'],
+    description: 'Time period filter (defaults to month)',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: 'integer',
+    description:
+      'Period offset (0 = current, negative = past periods, positive = future periods). Example: -1 = last period, 1 = next period',
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Account transactions retrieved successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Account not found' })
+  async getTransactions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+    @Query() query: TimeRangeQueryDto,
+  ) {
+    return this.transactionService.findByAccount(
+      id,
+      req.user.sub,
+      query.period ?? TimePeriod.MONTH,
+      query.offset ?? 0,
+    );
   }
 }
