@@ -10,7 +10,15 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -40,8 +48,15 @@ export class CategoryController {
 
   @Get()
   @ApiOperation({ summary: 'Get all categories' })
-  @ApiQuery({ name: 'type', required: false, description: 'Filter by transaction type (income/expense/transfer)' })
-  @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter by transaction type (income/expense/transfer)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Categories retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Request() req: AuthenticatedRequest, @Query('type') type?: string) {
     if (type) {

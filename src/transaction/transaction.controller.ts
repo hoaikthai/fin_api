@@ -9,12 +9,22 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import type { CreateTransactionDto } from './dto/create-transaction.dto';
 import type { UpdateTransactionDto } from './dto/update-transaction.dto';
 import type { CreateTransferDto } from './dto/create-transfer.dto';
+import { TimeRangeQueryDto, TimePeriod } from './dto/time-range-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../common/types';
 
@@ -40,29 +50,79 @@ export class TransactionController {
 
   @Get()
   @ApiOperation({ summary: 'Get all user transactions' })
-  @ApiResponse({ status: 200, description: 'Transactions retrieved successfully' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['day', 'week', 'month', 'quarter', 'year'],
+    description: 'Time period filter (defaults to month)',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: 'integer',
+    description:
+      'Period offset (0 = current, negative = past periods, positive = future periods). Example: -1 = last period, 1 = next period',
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Transactions retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findAll(@Request() req: AuthenticatedRequest) {
-    return this.transactionService.findAll(req.user.sub);
+  findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: TimeRangeQueryDto,
+  ) {
+    return this.transactionService.findAll(
+      req.user.sub,
+      query.period ?? TimePeriod.MONTH,
+      query.offset ?? 0,
+    );
   }
 
-  @Get('account/:accountId')
+  @Get('accounts/:accountId')
   @ApiOperation({ summary: 'Get transactions by account ID' })
   @ApiParam({ name: 'accountId', description: 'Account UUID', format: 'uuid' })
-  @ApiResponse({ status: 200, description: 'Account transactions retrieved successfully' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['day', 'week', 'month', 'quarter', 'year'],
+    description: 'Time period filter (defaults to month)',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: 'integer',
+    description:
+      'Period offset (0 = current, negative = past periods, positive = future periods). Example: -1 = last period, 1 = next period',
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Account transactions retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Account not found' })
   findByAccount(
     @Param('accountId', ParseUUIDPipe) accountId: string,
     @Request() req: AuthenticatedRequest,
+    @Query() query: TimeRangeQueryDto,
   ) {
-    return this.transactionService.findByAccount(accountId, req.user.sub);
+    return this.transactionService.findByAccount(
+      accountId,
+      req.user.sub,
+      query.period ?? TimePeriod.MONTH,
+      query.offset ?? 0,
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get transaction by ID' })
   @ApiParam({ name: 'id', description: 'Transaction UUID', format: 'uuid' })
-  @ApiResponse({ status: 200, description: 'Transaction retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Transaction retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   findOne(

@@ -85,12 +85,19 @@ Required environment variables (see .env.example):
   - Delete on cascade for all entities
   - Soft delete for all entities
 - **Authentication**: JWT-based with bcryptjs hashing, service-layer validation
-- **Testing**: Jest for unit/e2e tests, maintain test coverage for new features
+- **Testing**
+  - Jest for unit/e2e tests, maintain test coverage for new features
+  - Create test data using factory pattern
 - **Prefer**
   - ?? over ||
   - crypto.randomUUID() over literal fake uuid
+  - Early return over switch/case
+  - Don't pass optional arguments to functions
 - **TypeScript**
+  - Don't use `any`
   - Run `pnpm typecheck` after each implementation
+- **Format**
+  - Run `pnpm format` after each implementation
 
 ## Key Files and Structure
 

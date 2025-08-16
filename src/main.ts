@@ -8,11 +8,13 @@ import type { AppConfig } from './config/configuration';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const config = new DocumentBuilder()
     .setTitle('Personal Finance API')
-    .setDescription('A comprehensive personal finance management API built with NestJS')
+    .setDescription(
+      'A comprehensive personal finance management API built with NestJS',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {

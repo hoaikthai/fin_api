@@ -4,6 +4,7 @@ import { TransactionService } from './transaction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { TimePeriod } from './dto/time-range-query.dto';
 import { TransactionType } from '../common/enums';
 import { AuthenticatedRequest } from '../common/types';
 
@@ -94,19 +95,206 @@ describe('TransactionController', () => {
   });
 
   describe('findAll', () => {
-    it('should return all transactions for the authenticated user', async () => {
+    it('should return all transactions for the authenticated user with default month period', async () => {
       const mockTransactions = [mockTransaction];
       mockTransactionService.findAll.mockResolvedValue(mockTransactions);
 
-      const result = await controller.findAll(mockAuthenticatedRequest);
+      const result = await controller.findAll(mockAuthenticatedRequest, {});
 
-      expect(mockTransactionService.findAll).toHaveBeenCalledWith(mockUserId);
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.MONTH,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions filtered by day period', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.DAY,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.DAY,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions filtered by week period', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.WEEK,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.WEEK,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions filtered by quarter period', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.QUARTER,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.QUARTER,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions filtered by year period', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.YEAR,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.YEAR,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions for last month with offset -1', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.MONTH,
+        offset: -1,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.MONTH,
+        -1,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions for 3 months ago with offset -3', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.MONTH,
+        offset: -3,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.MONTH,
+        -3,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions for last week with offset -1', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.WEEK,
+        offset: -1,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.WEEK,
+        -1,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions for next month with positive offset 1', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.MONTH,
+        offset: 1,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.MONTH,
+        1,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions for next week with positive offset 1', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.WEEK,
+        offset: 1,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.WEEK,
+        1,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions for 2 months in the future with offset 2', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.MONTH,
+        offset: 2,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.MONTH,
+        2,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return transactions for next year with positive offset 1', async () => {
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findAll.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findAll(mockAuthenticatedRequest, {
+        period: TimePeriod.YEAR,
+        offset: 1,
+      });
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.YEAR,
+        1,
+      );
       expect(result).toEqual(mockTransactions);
     });
   });
 
   describe('findByAccount', () => {
-    it('should return transactions for a specific account', async () => {
+    it('should return transactions for a specific account with default month period', async () => {
       const accountId = mockAccountId;
       const mockTransactions = [mockTransaction];
       mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
@@ -114,16 +302,99 @@ describe('TransactionController', () => {
       const result = await controller.findByAccount(
         accountId,
         mockAuthenticatedRequest,
+        {},
       );
 
       expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
         accountId,
         mockUserId,
+        TimePeriod.MONTH,
+        0,
       );
       expect(result).toEqual(mockTransactions);
     });
 
-    it('should handle ParseIntPipe for accountId parameter', async () => {
+    it('should return account transactions filtered by day period', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.DAY },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.DAY,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return account transactions filtered by week period', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.WEEK },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.WEEK,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return account transactions filtered by quarter period', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.QUARTER },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.QUARTER,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return account transactions filtered by year period', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.YEAR },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.YEAR,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should handle ParseUUIDPipe for accountId parameter', async () => {
       const accountId = crypto.randomUUID();
       const mockTransactions = [mockTransaction];
       mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
@@ -131,11 +402,94 @@ describe('TransactionController', () => {
       const result = await controller.findByAccount(
         accountId,
         mockAuthenticatedRequest,
+        {},
       );
 
       expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
         accountId,
         mockUserId,
+        TimePeriod.MONTH,
+        0,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return account transactions for last month with offset -1', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.MONTH, offset: -1 },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.MONTH,
+        -1,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return account transactions for last quarter with offset -1', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.QUARTER, offset: -1 },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.QUARTER,
+        -1,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return account transactions for next month with positive offset 1', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.MONTH, offset: 1 },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.MONTH,
+        1,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return account transactions for next quarter with positive offset 1', async () => {
+      const accountId = mockAccountId;
+      const mockTransactions = [mockTransaction];
+      mockTransactionService.findByAccount.mockResolvedValue(mockTransactions);
+
+      const result = await controller.findByAccount(
+        accountId,
+        mockAuthenticatedRequest,
+        { period: TimePeriod.QUARTER, offset: 1 },
+      );
+
+      expect(mockTransactionService.findByAccount).toHaveBeenCalledWith(
+        accountId,
+        mockUserId,
+        TimePeriod.QUARTER,
+        1,
       );
       expect(result).toEqual(mockTransactions);
     });
@@ -295,9 +649,13 @@ describe('TransactionController', () => {
     it('should extract user ID from authenticated request', async () => {
       mockTransactionService.findAll.mockResolvedValue([]);
 
-      await controller.findAll(mockAuthenticatedRequest);
+      await controller.findAll(mockAuthenticatedRequest, {});
 
-      expect(mockTransactionService.findAll).toHaveBeenCalledWith(mockUserId);
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        TimePeriod.MONTH,
+        0,
+      );
     });
 
     it('should use user ID consistently across all methods', async () => {
@@ -308,10 +666,12 @@ describe('TransactionController', () => {
 
       mockTransactionService.findAll.mockResolvedValue([]);
 
-      await controller.findAll(differentUserRequest);
+      await controller.findAll(differentUserRequest, {});
 
       expect(mockTransactionService.findAll).toHaveBeenCalledWith(
         differentUserId,
+        TimePeriod.MONTH,
+        0,
       );
     });
   });

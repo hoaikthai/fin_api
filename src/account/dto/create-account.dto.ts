@@ -29,7 +29,7 @@ export class CreateAccountDto {
 
   @ApiProperty({
     description: 'Initial account balance',
-    example: 1000.50,
+    example: 1000.5,
     minimum: 0,
     required: false,
   })

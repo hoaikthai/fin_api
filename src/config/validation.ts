@@ -5,7 +5,9 @@ export class EnvironmentVariables {
   @IsNumber()
   @Min(1)
   @Max(65535)
-  @Transform(({ value }) => parseInt(value, 10), { toClassOnly: true })
+  @Transform(({ value }: { value: string }) => parseInt(value, 10), {
+    toClassOnly: true,
+  })
   PORT: number;
 
   @IsString()
@@ -14,7 +16,9 @@ export class EnvironmentVariables {
   @IsNumber()
   @Min(1)
   @Max(65535)
-  @Transform(({ value }) => parseInt(value, 10), { toClassOnly: true })
+  @Transform(({ value }: { value: string }) => parseInt(value, 10), {
+    toClassOnly: true,
+  })
   DB_PORT: number;
 
   @IsString()

@@ -4,11 +4,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Transaction } from './transaction.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { CreateTransferDto } from './dto/create-transfer.dto';
+import { TimePeriod } from './dto/time-range-query.dto';
 import { Account } from '../account/account.entity';
 import { Category } from '../category/category.entity';
 import { TransactionType } from '../common/enums';
@@ -23,6 +24,51 @@ export class TransactionService {
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
   ) {}
+
+  private getDateRange(period?: TimePeriod, offset = 0): Date {
+    const effectivePeriod = period ?? TimePeriod.MONTH;
+    const now = new Date();
+
+    switch (effectivePeriod) {
+      case TimePeriod.DAY: {
+        const startOfDay = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        );
+        startOfDay.setDate(startOfDay.getDate() + offset);
+        return startOfDay;
+      }
+      case TimePeriod.WEEK: {
+        const startOfDay = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        );
+        const startOfWeek = new Date(startOfDay);
+        startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+        startOfWeek.setDate(startOfWeek.getDate() + offset * 7);
+        return startOfWeek;
+      }
+      case TimePeriod.QUARTER: {
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        const targetQuarter = currentQuarter + offset;
+        const year = now.getFullYear() + Math.floor(targetQuarter / 4);
+        const adjustedQuarter = ((targetQuarter % 4) + 4) % 4;
+        const quarterStartMonth = adjustedQuarter * 3;
+        return new Date(year, quarterStartMonth, 1);
+      }
+      case TimePeriod.YEAR: {
+        return new Date(now.getFullYear() + offset, 0, 1);
+      }
+      default: {
+        const month = now.getMonth() + offset;
+        const year = now.getFullYear() + Math.floor(month / 12);
+        const adjustedMonth = ((month % 12) + 12) % 12;
+        return new Date(year, adjustedMonth, 1);
+      }
+    }
+  }
 
   async create(
     createTransactionDto: CreateTransactionDto,
@@ -65,9 +111,19 @@ export class TransactionService {
     return this.transactionRepository.save(transaction);
   }
 
-  async findAll(userId: string): Promise<Transaction[]> {
+  async findAll(
+    userId: string,
+    period?: TimePeriod,
+    offset = 0,
+  ): Promise<Transaction[]> {
+    const fromDate = this.getDateRange(period, offset);
+    const whereCondition = {
+      userId,
+      transactionDate: MoreThanOrEqual(fromDate),
+    };
+
     return this.transactionRepository.find({
-      where: { userId },
+      where: whereCondition,
       relations: ['account', 'category'],
       order: { transactionDate: 'DESC' },
     });
@@ -115,6 +171,8 @@ export class TransactionService {
   async findByAccount(
     accountId: string,
     userId: string,
+    period?: TimePeriod,
+    offset = 0,
   ): Promise<Transaction[]> {
     const account = await this.accountRepository.findOne({
       where: { id: accountId, userId },
@@ -124,8 +182,15 @@ export class TransactionService {
       throw new NotFoundException('Account not found');
     }
 
+    const fromDate = this.getDateRange(period, offset);
+    const whereCondition = {
+      accountId,
+      userId,
+      transactionDate: MoreThanOrEqual(fromDate),
+    };
+
     return this.transactionRepository.find({
-      where: { accountId, userId },
+      where: whereCondition,
       relations: ['account', 'category'],
       order: { transactionDate: 'DESC' },
     });
