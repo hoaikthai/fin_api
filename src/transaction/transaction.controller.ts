@@ -10,6 +10,7 @@ import {
   Request,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import type { CreateTransactionDto } from './dto/create-transaction.dto';
 import type { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -17,12 +18,19 @@ import type { CreateTransferDto } from './dto/create-transfer.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../common/types';
 
+@ApiTags('Transactions')
+@ApiBearerAuth('JWT-auth')
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new transaction' })
+  @ApiBody({ description: 'Transaction data' })
+  @ApiResponse({ status: 201, description: 'Transaction created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(
     @Body() createTransactionDto: CreateTransactionDto,
     @Request() req: AuthenticatedRequest,
@@ -31,11 +39,19 @@ export class TransactionController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all user transactions' })
+  @ApiResponse({ status: 200, description: 'Transactions retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Request() req: AuthenticatedRequest) {
     return this.transactionService.findAll(req.user.sub);
   }
 
   @Get('account/:accountId')
+  @ApiOperation({ summary: 'Get transactions by account ID' })
+  @ApiParam({ name: 'accountId', description: 'Account UUID', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Account transactions retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Account not found' })
   findByAccount(
     @Param('accountId', ParseUUIDPipe) accountId: string,
     @Request() req: AuthenticatedRequest,
@@ -44,6 +60,11 @@ export class TransactionController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get transaction by ID' })
+  @ApiParam({ name: 'id', description: 'Transaction UUID', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Transaction retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
@@ -52,6 +73,13 @@ export class TransactionController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update transaction' })
+  @ApiParam({ name: 'id', description: 'Transaction UUID', format: 'uuid' })
+  @ApiBody({ description: 'Updated transaction data' })
+  @ApiResponse({ status: 200, description: 'Transaction updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTransactionDto: UpdateTransactionDto,
@@ -65,6 +93,11 @@ export class TransactionController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete transaction' })
+  @ApiParam({ name: 'id', description: 'Transaction UUID', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Transaction deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
   remove(
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
@@ -73,6 +106,11 @@ export class TransactionController {
   }
 
   @Post('transfer')
+  @ApiOperation({ summary: 'Create a transfer between accounts' })
+  @ApiBody({ description: 'Transfer data' })
+  @ApiResponse({ status: 201, description: 'Transfer created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   transfer(
     @Body() createTransferDto: CreateTransferDto,
     @Request() req: AuthenticatedRequest,
