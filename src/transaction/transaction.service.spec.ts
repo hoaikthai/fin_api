@@ -77,6 +77,7 @@ describe('TransactionService', () => {
     find: jest.fn(),
     findOne: jest.fn(),
     remove: jest.fn(),
+    softRemove: jest.fn(),
   };
 
   const mockAccountRepository = {
@@ -285,7 +286,7 @@ describe('TransactionService', () => {
   describe('remove', () => {
     it('should remove the transaction', async () => {
       mockTransactionRepository.findOne.mockResolvedValue(mockTransaction);
-      mockTransactionRepository.remove.mockResolvedValue(mockTransaction);
+      mockTransactionRepository.softRemove.mockResolvedValue(mockTransaction);
 
       await service.remove(mockTransactionId, mockUserId);
 
@@ -293,7 +294,7 @@ describe('TransactionService', () => {
         where: { id: mockTransactionId, userId: mockUserId },
         relations: ['account', 'category'],
       });
-      expect(mockTransactionRepository.remove).toHaveBeenCalledWith(
+      expect(mockTransactionRepository.softRemove).toHaveBeenCalledWith(
         mockTransaction,
       );
     });

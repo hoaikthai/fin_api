@@ -56,7 +56,7 @@ export class AccountService {
 
   async remove(id: string, userId: string): Promise<void> {
     const account = await this.findOne(id, userId);
-    await this.accountRepository.remove(account);
+    await this.accountRepository.softRemove(account);
   }
 
   async updateBalance(

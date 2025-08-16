@@ -1,19 +1,9 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../user/user.entity';
+import { BaseEntity } from '../common/base.entity';
 
 @Entity()
-export class Account {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Account extends BaseEntity {
   @Column()
   name: string;
 
@@ -35,10 +25,4 @@ export class Account {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

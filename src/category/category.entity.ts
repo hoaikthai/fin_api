@@ -1,22 +1,11 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Transaction } from '../transaction/transaction.entity';
 import { TransactionType } from '../common/enums';
+import { BaseEntity } from '../common/base.entity';
 
 @Entity()
-export class Category {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Category extends BaseEntity {
   @Column()
   name: string;
 
@@ -46,15 +35,13 @@ export class Category {
   @JoinColumn({ name: 'parentId' })
   parent: Category | null;
 
-  @OneToMany(() => Category, (category) => category.parent, { onDelete: 'CASCADE' })
+  @OneToMany(() => Category, (category) => category.parent, {
+    onDelete: 'CASCADE',
+  })
   children: Category[];
 
-  @OneToMany(() => Transaction, (transaction) => transaction.category, { onDelete: 'CASCADE' })
+  @OneToMany(() => Transaction, (transaction) => transaction.category, {
+    onDelete: 'CASCADE',
+  })
   transactions: Transaction[];
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

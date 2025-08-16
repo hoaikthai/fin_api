@@ -146,7 +146,7 @@ export class CategoryService {
       );
     }
 
-    await this.categoryRepository.remove(category);
+    await this.categoryRepository.softRemove(category);
   }
 
   async seedDefaultCategories(): Promise<void> {

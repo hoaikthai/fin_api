@@ -83,6 +83,7 @@ Required environment variables (see .env.example):
 - **Database**:
   - TypeORM migrations for schema changes (never use synchronize), located in `src/migrations/`
   - Delete on cascade for all entities
+  - Soft delete for all entities
 - **Authentication**: JWT-based with bcryptjs hashing, service-layer validation
 - **Testing**: Jest for unit/e2e tests, maintain test coverage for new features
 - **Prefer**

@@ -1,10 +1,10 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class InitDB1755230239418 implements MigrationInterface {
-    name = 'InitDB1755230239418'
+  name = 'InitDB1755230239418';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "account" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "name" character varying NOT NULL,
@@ -18,7 +18,7 @@ export class InitDB1755230239418 implements MigrationInterface {
                 CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "user" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "email" character varying NOT NULL,
@@ -31,10 +31,10 @@ export class InitDB1755230239418 implements MigrationInterface {
                 CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TYPE "public"."category_type_enum" AS ENUM('income', 'expense')
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "category" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "name" character varying NOT NULL,
@@ -47,10 +47,10 @@ export class InitDB1755230239418 implements MigrationInterface {
                 CONSTRAINT "PK_9c4e4a89e3674fc9f382d733f03" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TYPE "public"."transaction_type_enum" AS ENUM('income', 'expense')
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "transaction" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "type" "public"."transaction_type_enum" NOT NULL,
@@ -66,76 +66,75 @@ export class InitDB1755230239418 implements MigrationInterface {
                 CONSTRAINT "PK_89eadb93a89810556e1cbcd6ab9" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "account"
             ADD CONSTRAINT "FK_60328bf27019ff5498c4b977421" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "category"
             ADD CONSTRAINT "FK_32b856438dffdc269fa84434d9f" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "category"
             ADD CONSTRAINT "FK_d5456fd7e4c4866fec8ada1fa10" FOREIGN KEY ("parentId") REFERENCES "category"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "transaction"
             ADD CONSTRAINT "FK_d3951864751c5812e70d033978d" FOREIGN KEY ("categoryId") REFERENCES "category"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "transaction"
             ADD CONSTRAINT "FK_605baeb040ff0fae995404cea37" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "transaction"
             ADD CONSTRAINT "FK_3d6e89b14baa44a71870450d14d" FOREIGN KEY ("accountId") REFERENCES "account"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "transaction"
             ADD CONSTRAINT "FK_698033f6f5784451d4c06d40a68" FOREIGN KEY ("relatedTransactionId") REFERENCES "transaction"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             ALTER TABLE "transaction" DROP CONSTRAINT "FK_698033f6f5784451d4c06d40a68"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "transaction" DROP CONSTRAINT "FK_3d6e89b14baa44a71870450d14d"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "transaction" DROP CONSTRAINT "FK_605baeb040ff0fae995404cea37"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "transaction" DROP CONSTRAINT "FK_d3951864751c5812e70d033978d"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "category" DROP CONSTRAINT "FK_d5456fd7e4c4866fec8ada1fa10"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "category" DROP CONSTRAINT "FK_32b856438dffdc269fa84434d9f"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "account" DROP CONSTRAINT "FK_60328bf27019ff5498c4b977421"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "transaction"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TYPE "public"."transaction_type_enum"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "category"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TYPE "public"."category_type_enum"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "user"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "account"
         `);
-    }
-
+  }
 }

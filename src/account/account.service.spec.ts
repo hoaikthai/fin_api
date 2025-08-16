@@ -41,6 +41,7 @@ describe('AccountService', () => {
     find: jest.fn(),
     findOne: jest.fn(),
     remove: jest.fn(),
+    softRemove: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -230,14 +231,14 @@ describe('AccountService', () => {
   describe('remove', () => {
     it('should remove the account', async () => {
       mockRepository.findOne.mockResolvedValue(mockAccount);
-      mockRepository.remove.mockResolvedValue(mockAccount);
+      mockRepository.softRemove.mockResolvedValue(mockAccount);
 
       await service.remove(mockAccountId, mockUserId);
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockAccountId, userId: mockUserId },
       });
-      expect(mockRepository.remove).toHaveBeenCalledWith(mockAccount);
+      expect(mockRepository.softRemove).toHaveBeenCalledWith(mockAccount);
     });
 
     it('should throw NotFoundException when account not found', async () => {
@@ -247,7 +248,7 @@ describe('AccountService', () => {
       await expect(service.remove(nonExistentId2, mockUserId)).rejects.toThrow(
         NotFoundException,
       );
-      expect(mockRepository.remove).not.toHaveBeenCalled();
+      expect(mockRepository.softRemove).not.toHaveBeenCalled();
     });
   });
 

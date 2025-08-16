@@ -1,22 +1,12 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Account } from '../account/account.entity';
 import { Category } from '../category/category.entity';
 import { TransactionType } from '../common/enums';
+import { BaseEntity } from '../common/base.entity';
 
 @Entity()
-export class Transaction {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Transaction extends BaseEntity {
   @Column({
     type: 'enum',
     enum: TransactionType,
@@ -32,7 +22,9 @@ export class Transaction {
   @Column('uuid')
   categoryId: string;
 
-  @ManyToOne(() => Category, (category) => category.transactions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Category, (category) => category.transactions, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
@@ -59,10 +51,4 @@ export class Transaction {
   @ManyToOne(() => Transaction, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'relatedTransactionId' })
   relatedTransaction?: Transaction | null;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

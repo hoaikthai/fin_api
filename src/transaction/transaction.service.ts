@@ -109,7 +109,7 @@ export class TransactionService {
 
   async remove(id: string, userId: string): Promise<void> {
     const transaction = await this.findOne(id, userId);
-    await this.transactionRepository.remove(transaction);
+    await this.transactionRepository.softRemove(transaction);
   }
 
   async findByAccount(

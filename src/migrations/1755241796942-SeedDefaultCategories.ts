@@ -1,26 +1,25 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
-import { randomUUID } from "crypto";
+import { MigrationInterface, QueryRunner } from 'typeorm';
+import { randomUUID } from 'crypto';
 
 export class SeedDefaultCategories1755241796942 implements MigrationInterface {
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Parent category constants
+    const FOOD_BEVERAGE_ID = randomUUID();
+    const BILLS_UTILITIES_ID = randomUUID();
+    const TRANSPORTATION_ID = randomUUID();
+    const SHOPPING_ID = randomUUID();
+    const FAMILY_ID = randomUUID();
+    const HEALTH_FITNESS_ID = randomUUID();
+    const EDUCATION_ID = randomUUID();
+    const ENTERTAINMENT_ID = randomUUID();
+    const GIFT_DONATION_ID = randomUUID();
+    const INSURANCES_ID = randomUUID();
+    const OTHER_EXPENSE_ID = randomUUID();
+    const OUTGOING_TRANSFER_ID = randomUUID();
+    const TRAVEL_ID = randomUUID();
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Parent category constants
-        const FOOD_BEVERAGE_ID = randomUUID();
-        const BILLS_UTILITIES_ID = randomUUID();
-        const TRANSPORTATION_ID = randomUUID();
-        const SHOPPING_ID = randomUUID();
-        const FAMILY_ID = randomUUID();
-        const HEALTH_FITNESS_ID = randomUUID();
-        const EDUCATION_ID = randomUUID();
-        const ENTERTAINMENT_ID = randomUUID();
-        const GIFT_DONATION_ID = randomUUID();
-        const INSURANCES_ID = randomUUID();
-        const OTHER_EXPENSE_ID = randomUUID();
-        const OUTGOING_TRANSFER_ID = randomUUID();
-        const TRAVEL_ID = randomUUID();
-
-        // Insert parent expense categories
-        await queryRunner.query(`
+    // Insert parent expense categories
+    await queryRunner.query(`
             INSERT INTO "category" ("id", "name", "type", "isDefault", "userId", "parentId")
             VALUES 
                 ('${FOOD_BEVERAGE_ID}', 'Food & Beverage', 'expense', true, null, null),
@@ -38,8 +37,8 @@ export class SeedDefaultCategories1755241796942 implements MigrationInterface {
                 ('${TRAVEL_ID}', 'Travel', 'expense', true, null, null);
         `);
 
-        // Insert child expense categories
-        await queryRunner.query(`
+    // Insert child expense categories
+    await queryRunner.query(`
             INSERT INTO "category" ("id", "name", "type", "isDefault", "userId", "parentId")
             VALUES 
                 -- Food & Beverage children
@@ -93,8 +92,8 @@ export class SeedDefaultCategories1755241796942 implements MigrationInterface {
                 ('${randomUUID()}', 'Hotel', 'expense', true, null, '${TRAVEL_ID}');
         `);
 
-        // Insert income categories
-        await queryRunner.query(`
+    // Insert income categories
+    await queryRunner.query(`
             INSERT INTO "category" ("id", "name", "type", "isDefault", "userId", "parentId")
             VALUES 
                 ('${randomUUID()}', 'Salary', 'income', true, null, null),
@@ -104,11 +103,10 @@ export class SeedDefaultCategories1755241796942 implements MigrationInterface {
                 ('${randomUUID()}', 'Award', 'income', true, null, null),
                 ('${randomUUID()}', 'Selling', 'income', true, null, null);
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        // Remove all default categories
-        await queryRunner.query(`DELETE FROM "category" WHERE "isDefault" = true;`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // Remove all default categories
+    await queryRunner.query(`DELETE FROM "category" WHERE "isDefault" = true;`);
+  }
 }
