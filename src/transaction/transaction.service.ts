@@ -1,18 +1,23 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
-import { Transaction } from './transaction.entity';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { CreateTransferDto } from './dto/create-transfer.dto';
-import { TimePeriod } from './dto/time-range-query.dto';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import csv from 'csv-parser';
+import { Readable } from 'stream';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { Account } from '../account/account.entity';
 import { Category } from '../category/category.entity';
 import { TransactionType } from '../common/enums';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { CreateTransferDto } from './dto/create-transfer.dto';
+import { CsvRowDto } from './dto/csv-import.dto';
+import { TimePeriod } from './dto/time-range-query.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { Transaction } from './transaction.entity';
 
 @Injectable()
 export class TransactionService {
@@ -159,6 +164,36 @@ export class TransactionService {
       }
     }
 
+    if (updateTransactionDto.categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: updateTransactionDto.categoryId },
+      });
+
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+
+      if (!category.isDefault && category.userId !== userId) {
+        throw new BadRequestException('Access denied to this category');
+      }
+    }
+
+    // Apply business rule validation for amount signs
+    const finalType = updateTransactionDto.type ?? transaction.type;
+    const finalAmount = updateTransactionDto.amount ?? transaction.amount;
+
+    if (finalType === TransactionType.INCOME && finalAmount <= 0) {
+      throw new BadRequestException(
+        'Amount must be positive for income transactions',
+      );
+    }
+
+    if (finalType === TransactionType.EXPENSE && finalAmount >= 0) {
+      throw new BadRequestException(
+        'Amount must be negative for expense transactions',
+      );
+    }
+
     Object.assign(transaction, updateTransactionDto);
     return this.transactionRepository.save(transaction);
   }
@@ -259,7 +294,7 @@ export class TransactionService {
 
     const sourceTransactionData: CreateTransactionDto = {
       type: TransactionType.EXPENSE,
-      amount,
+      amount: -Math.abs(amount), // Ensure negative for expense
       description,
       categoryId: outgoingTransferCategory.id,
       accountId: sourceAccountId,
@@ -268,7 +303,7 @@ export class TransactionService {
 
     const destinationTransactionData: CreateTransactionDto = {
       type: TransactionType.INCOME,
-      amount,
+      amount: Math.abs(amount), // Ensure positive for income
       description,
       categoryId: incomingTransferCategory.id,
       accountId: destinationAccountId,
@@ -285,5 +320,192 @@ export class TransactionService {
       sourceTransaction,
       destinationTransaction,
     };
+  }
+
+  async importFromCsv(
+    csvBuffer: Buffer,
+    userId: string,
+  ): Promise<{ imported: number; errors: string[] }> {
+    const csvRows: CsvRowDto[] = [];
+
+    return new Promise((resolve, reject) => {
+      const stream = Readable.from(csvBuffer);
+
+      stream
+        .pipe(csv())
+        .on('data', (row: CsvRowDto) => {
+          csvRows.push(row);
+        })
+        .on('end', () => {
+          this.processCsvRows(csvRows, userId).then(resolve).catch(reject);
+        })
+        .on('error', (error) => {
+          reject(
+            new BadRequestException(`CSV parsing error: ${error.message}`),
+          );
+        });
+    });
+  }
+
+  private async processCsvRows(
+    csvRows: CsvRowDto[],
+    userId: string,
+  ): Promise<{ imported: number; errors: string[] }> {
+    const errors: string[] = [];
+
+    const userAccounts = await this.accountRepository.find({
+      where: { userId },
+    });
+
+    const userCategories = await this.categoryRepository.find({
+      where: [{ userId }, { isDefault: true }],
+    });
+
+    this.validateCsvData(csvRows, userAccounts, userCategories);
+
+    // First pass: validate all rows and collect errors
+    for (let i = 0; i < csvRows.length; i++) {
+      try {
+        const csvRow = plainToInstance(CsvRowDto, csvRows[i]);
+        const validationErrors = await validate(csvRow);
+
+        if (validationErrors.length > 0) {
+          const errorMessages = validationErrors
+            .map((err) => Object.values(err.constraints ?? {}))
+            .flat();
+          errors.push(`Row ${i + 2}: ${errorMessages.join(', ')}`);
+          continue;
+        }
+
+        const account = userAccounts.find((acc) => acc.name === csvRow.Wallet);
+        if (!account) {
+          errors.push(`Row ${i + 2}: Account "${csvRow.Wallet}" not found`);
+          continue;
+        }
+
+        const category = userCategories.find(
+          (cat) => cat.name === csvRow.Category,
+        );
+        if (!category) {
+          errors.push(`Row ${i + 2}: Category "${csvRow.Category}" not found`);
+          continue;
+        }
+
+        if (account.currency !== csvRow.Currency) {
+          errors.push(
+            `Row ${i + 2}: Currency mismatch. Account uses ${account.currency}, transaction uses ${csvRow.Currency}`,
+          );
+          continue;
+        }
+
+        // Apply business rule: amount should be positive for income, negative for expense
+        const expectedSign = category.type === TransactionType.INCOME ? 1 : -1;
+        const actualSign = csvRow.Amount >= 0 ? 1 : -1;
+
+        if (expectedSign !== actualSign) {
+          const expectedType =
+            category.type === TransactionType.INCOME ? 'positive' : 'negative';
+          errors.push(
+            `Row ${i + 2}: Amount should be ${expectedType} for ${category.type} transactions`,
+          );
+          continue;
+        }
+      } catch (error) {
+        errors.push(
+          `Row ${i + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+    }
+
+    // If any errors found, return them without importing anything
+    if (errors.length > 0) {
+      return { imported: 0, errors };
+    }
+
+    // Second pass: import all transactions (only if no errors)
+    let imported = 0;
+    for (let i = 0; i < csvRows.length; i++) {
+      const csvRow = plainToInstance(CsvRowDto, csvRows[i]);
+      const account = userAccounts.find((acc) => acc.name === csvRow.Wallet);
+      const category = userCategories.find(
+        (cat) => cat.name === csvRow.Category,
+      );
+
+      // These should exist since we validated in the first pass
+      if (!account || !category) {
+        continue;
+      }
+
+      const transactionDto: CreateTransactionDto = {
+        type: category.type,
+        amount: csvRow.Amount,
+        description: csvRow.Note ?? `Imported transaction`,
+        categoryId: category.id,
+        accountId: account.id,
+        transactionDate: new Date(csvRow.Date),
+      };
+
+      await this.create(transactionDto, userId);
+      imported++;
+    }
+
+    return { imported, errors };
+  }
+
+  private validateCsvData(
+    csvRows: CsvRowDto[],
+    userAccounts: Account[],
+    userCategories: Category[],
+  ): void {
+    if (csvRows.length === 0) {
+      throw new BadRequestException('CSV file is empty');
+    }
+
+    const requiredColumns = [
+      'Date',
+      'Category',
+      'Amount',
+      'Currency',
+      'Wallet',
+    ];
+    const firstRow = csvRows[0];
+    const missingColumns = requiredColumns.filter((col) => !(col in firstRow));
+
+    if (missingColumns.length > 0) {
+      throw new BadRequestException(
+        `Missing required columns: ${missingColumns.join(', ')}`,
+      );
+    }
+
+    const accountNames = new Set(csvRows.map((row) => row.Wallet));
+    const categoryNames = new Set(csvRows.map((row) => row.Category));
+
+    const userAccountNames = new Set(userAccounts.map((acc) => acc.name));
+    const userCategoryNames = new Set(userCategories.map((cat) => cat.name));
+
+    const missingAccounts = Array.from(accountNames).filter(
+      (name) => !userAccountNames.has(name),
+    );
+    const missingCategories = Array.from(categoryNames).filter(
+      (name) => !userCategoryNames.has(name),
+    );
+
+    const validationErrors: string[] = [];
+
+    if (missingAccounts.length > 0) {
+      validationErrors.push(
+        `Missing accounts: ${missingAccounts.join(', ')}. Please create these accounts first.`,
+      );
+    }
+
+    if (missingCategories.length > 0) {
+      validationErrors.push(
+        `Missing categories: ${missingCategories.join(', ')}. Please create these categories first.`,
+      );
+    }
+
+    if (validationErrors.length > 0) {
+      throw new BadRequestException(validationErrors.join(' '));
+    }
   }
 }

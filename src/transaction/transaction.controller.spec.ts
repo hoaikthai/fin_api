@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TransactionController } from './transaction.controller';
-import { TransactionService } from './transaction.service';
+import { Readable } from 'stream';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { TimePeriod } from './dto/time-range-query.dto';
 import { TransactionType } from '../common/enums';
 import { AuthenticatedRequest } from '../common/types';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { TimePeriod } from './dto/time-range-query.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { TransactionController } from './transaction.controller';
+import { TransactionService } from './transaction.service';
 
 const mockTransactionService = {
   create: jest.fn(),
@@ -14,6 +15,7 @@ const mockTransactionService = {
   findOne: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
+  importFromCsv: jest.fn(),
 };
 
 const mockJwtAuthGuard = {
@@ -36,7 +38,7 @@ describe('TransactionController', () => {
   const mockTransaction = {
     id: mockTransactionId,
     type: TransactionType.EXPENSE,
-    amount: 100,
+    amount: -100, // Negative for expense transactions
     description: 'Test expense',
     categoryId: crypto.randomUUID(),
     accountId: mockAccountId,
@@ -67,7 +69,7 @@ describe('TransactionController', () => {
   describe('create', () => {
     const createTransactionDto: CreateTransactionDto = {
       type: TransactionType.INCOME,
-      amount: 500,
+      amount: 500, // Positive for income transactions
       description: 'Test income',
       categoryId: crypto.randomUUID(),
       accountId: mockAccountId,
@@ -357,9 +359,9 @@ describe('TransactionController', () => {
     it('should handle partial updates', async () => {
       const transactionId = mockTransactionId;
       const partialUpdateDto: UpdateTransactionDto = {
-        amount: 150,
+        amount: -150, // Negative for expense transaction
       };
-      const updatedTransaction = { ...mockTransaction, amount: 150 };
+      const updatedTransaction = { ...mockTransaction, amount: -150 };
       mockTransactionService.update.mockResolvedValue(updatedTransaction);
 
       const result = await controller.update(
@@ -380,10 +382,12 @@ describe('TransactionController', () => {
       const transactionId = mockTransactionId;
       const typeUpdateDto: UpdateTransactionDto = {
         type: TransactionType.INCOME,
+        amount: 100, // Must update amount to positive when changing to income
       };
       const updatedTransaction = {
         ...mockTransaction,
         type: TransactionType.INCOME,
+        amount: 100,
       };
       mockTransactionService.update.mockResolvedValue(updatedTransaction);
 
@@ -470,6 +474,150 @@ describe('TransactionController', () => {
         TimePeriod.MONTH,
         0,
       );
+    });
+  });
+
+  describe('importTransactions', () => {
+    const mockBuffer = Buffer.from(
+      'Date,Category,Amount,Currency,Wallet\n2024-01-15,Food,25.50,USD,Test Account',
+    );
+    const mockCsvFile: Express.Multer.File = {
+      fieldname: 'file',
+      originalname: 'transactions.csv',
+      encoding: '7bit',
+      mimetype: 'text/csv',
+      size: 1024,
+      destination: '',
+      filename: 'transactions.csv',
+      path: '',
+      buffer: mockBuffer,
+      stream: Readable.from(mockBuffer),
+    };
+
+    it('should successfully import transactions from CSV file', async () => {
+      const importResult = {
+        imported: 5,
+        errors: [],
+      };
+      mockTransactionService.importFromCsv.mockResolvedValue(importResult);
+
+      const result = await controller.importTransactions(
+        mockCsvFile,
+        mockAuthenticatedRequest,
+      );
+
+      expect(mockTransactionService.importFromCsv).toHaveBeenCalledWith(
+        mockCsvFile.buffer,
+        mockUserId,
+      );
+      expect(result).toEqual(importResult);
+    });
+
+    it('should return import result with errors', async () => {
+      const importResult = {
+        imported: 3,
+        errors: ['Row 2: Invalid date format', 'Row 4: Account not found'],
+      };
+      mockTransactionService.importFromCsv.mockResolvedValue(importResult);
+
+      const result = await controller.importTransactions(
+        mockCsvFile,
+        mockAuthenticatedRequest,
+      );
+
+      expect(result).toEqual(importResult);
+    });
+
+    it('should throw error when file is not CSV', async () => {
+      const nonCsvFile: Express.Multer.File = {
+        ...mockCsvFile,
+        originalname: 'document.txt',
+        mimetype: 'text/plain',
+      };
+
+      await expect(
+        controller.importTransactions(nonCsvFile, mockAuthenticatedRequest),
+      ).rejects.toThrow('File must be a CSV file');
+
+      expect(mockTransactionService.importFromCsv).not.toHaveBeenCalled();
+    });
+
+    it('should accept CSV file with .csv extension even if mimetype is different', async () => {
+      const csvFileWithDifferentMimetype: Express.Multer.File = {
+        ...mockCsvFile,
+        mimetype: 'application/octet-stream',
+        originalname: 'transactions.csv',
+      };
+
+      const importResult = { imported: 1, errors: [] };
+      mockTransactionService.importFromCsv.mockResolvedValue(importResult);
+
+      const result = await controller.importTransactions(
+        csvFileWithDifferentMimetype,
+        mockAuthenticatedRequest,
+      );
+
+      expect(mockTransactionService.importFromCsv).toHaveBeenCalledWith(
+        csvFileWithDifferentMimetype.buffer,
+        mockUserId,
+      );
+      expect(result).toEqual(importResult);
+    });
+
+    it('should handle service errors during import', async () => {
+      const serviceError = new Error('Invalid CSV format');
+      mockTransactionService.importFromCsv.mockRejectedValue(serviceError);
+
+      await expect(
+        controller.importTransactions(mockCsvFile, mockAuthenticatedRequest),
+      ).rejects.toThrow('Invalid CSV format');
+    });
+
+    it('should extract user ID correctly from authenticated request', async () => {
+      const differentUserId = crypto.randomUUID();
+      const differentUserRequest = {
+        user: { sub: differentUserId, email: 'other@example.com' },
+      } as AuthenticatedRequest;
+
+      const importResult = { imported: 2, errors: [] };
+      mockTransactionService.importFromCsv.mockResolvedValue(importResult);
+
+      await controller.importTransactions(mockCsvFile, differentUserRequest);
+
+      expect(mockTransactionService.importFromCsv).toHaveBeenCalledWith(
+        mockCsvFile.buffer,
+        differentUserId,
+      );
+    });
+
+    it('should handle large CSV files', async () => {
+      const largeCsvFile: Express.Multer.File = {
+        ...mockCsvFile,
+        size: 1024 * 1024 * 5, // 5MB
+        buffer: Buffer.alloc(1024 * 1024 * 5),
+      };
+
+      const importResult = { imported: 1000, errors: [] };
+      mockTransactionService.importFromCsv.mockResolvedValue(importResult);
+
+      const result = await controller.importTransactions(
+        largeCsvFile,
+        mockAuthenticatedRequest,
+      );
+
+      expect(result).toEqual(importResult);
+    });
+
+    it('should handle empty import result', async () => {
+      const importResult = { imported: 0, errors: ['CSV file is empty'] };
+      mockTransactionService.importFromCsv.mockResolvedValue(importResult);
+
+      const result = await controller.importTransactions(
+        mockCsvFile,
+        mockAuthenticatedRequest,
+      );
+
+      expect(result).toEqual(importResult);
     });
   });
 });

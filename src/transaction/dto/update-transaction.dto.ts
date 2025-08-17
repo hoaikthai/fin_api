@@ -3,11 +3,11 @@ import {
   IsOptional,
   IsNumber,
   IsString,
-  IsPositive,
   IsDateString,
   IsUUID,
 } from 'class-validator';
 import { TransactionType } from '../../common/enums';
+import { IsAmountSignValid } from '../validators/amount-sign.validator';
 
 export class UpdateTransactionDto {
   @IsEnum(TransactionType)
@@ -15,7 +15,7 @@ export class UpdateTransactionDto {
   type?: TransactionType;
 
   @IsNumber({ maxDecimalPlaces: 2 })
-  @IsPositive()
+  @IsAmountSignValid()
   @IsOptional()
   amount?: number;
 

@@ -112,6 +112,8 @@ Required environment variables (see .env.example):
 
 ## Business rules
 
+- For a transaction, the amount is positive for income and negative for expense
+
 - For transfer transactions, we do as follow:
   - Create an expense transaction with the amount to be transferred for the source account, the transaction category is Outgoing transfer
   - Create an income transaction with the amount to be transferred for the destination account, the transaction category is Incoming transfer

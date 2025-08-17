@@ -10,6 +10,8 @@ import {
   Request,
   ParseUUIDPipe,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,7 +21,9 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionService } from './transaction.service';
 import type { CreateTransactionDto } from './dto/create-transaction.dto';
 import type { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -126,5 +130,58 @@ export class TransactionController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.transactionService.remove(id, req.user.sub);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Import transactions from CSV file' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'CSV file with transaction data',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'CSV file with columns: Id, Date, Category, Amount, Currency, Note, Wallet',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Transactions imported successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        imported: {
+          type: 'number',
+          description: 'Number of transactions imported',
+        },
+        errors: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'List of errors for failed rows',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid CSV file or data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseInterceptors(FileInterceptor('file'))
+  async importTransactions(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+
+    if (file.mimetype !== 'text/csv' && !file.originalname.endsWith('.csv')) {
+      throw new Error('File must be a CSV file');
+    }
+
+    return this.transactionService.importFromCsv(file.buffer, req.user.sub);
   }
 }
