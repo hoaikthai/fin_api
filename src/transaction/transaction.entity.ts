@@ -14,7 +14,7 @@ export class Transaction extends BaseEntity {
   })
   type: TransactionType;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 15, scale: 2 })
   amount: number;
 
   @Column()
