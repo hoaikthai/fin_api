@@ -5,13 +5,21 @@ import { AccountService } from './account.service';
 import { AccountController } from './account.controller';
 import { Account } from './account.entity';
 import { TransactionModule } from '../transaction/transaction.module';
+import { ConfigService } from '@nestjs/config';
+import { AppConfig } from 'src/config/configuration';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Account]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default_jwt_secret',
-      signOptions: { expiresIn: '1h' },
+    JwtModule.registerAsync({
+      useFactory: (configService: ConfigService<AppConfig>) => {
+        const jwtConfig = configService.get('jwt', { infer: true })!;
+        return {
+          secret: jwtConfig.secret,
+          signOptions: { expiresIn: jwtConfig.expiresIn },
+        };
+      },
+      inject: [ConfigService],
     }),
     TransactionModule,
   ],

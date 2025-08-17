@@ -1,13 +1,13 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Account } from '../account/account.entity';
 import { Category } from '../category/category.entity';
-import { TransactionType } from '../common/enums';
+import { Transaction } from '../transaction/transaction.entity';
+import { TransactionType, RecurrenceFrequency } from '../common/enums';
 import { BaseEntity } from '../common/base.entity';
-import { RecurringTransaction } from '../recurring-transaction/recurring-transaction.entity';
 
 @Entity()
-export class Transaction extends BaseEntity {
+export class RecurringTransaction extends BaseEntity {
   @Column({
     type: 'enum',
     enum: TransactionType,
@@ -43,23 +43,27 @@ export class Transaction extends BaseEntity {
   @JoinColumn({ name: 'accountId' })
   account: Account;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  transactionDate: Date;
-
-  @Column('uuid', { nullable: true })
-  relatedTransactionId?: string | null;
-
-  @ManyToOne(() => Transaction, { nullable: true, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'relatedTransactionId' })
-  relatedTransaction?: Transaction | null;
-
-  @Column('uuid', { nullable: true })
-  recurringTransactionId?: string | null;
-
-  @ManyToOne(() => RecurringTransaction, {
-    nullable: true,
-    onDelete: 'CASCADE',
+  @Column({
+    type: 'enum',
+    enum: RecurrenceFrequency,
   })
-  @JoinColumn({ name: 'recurringTransactionId' })
-  recurringTransaction?: RecurringTransaction;
+  frequency: RecurrenceFrequency;
+
+  @Column({ type: 'timestamp' })
+  startDate: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  endDate?: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  nextDueDate?: Date | null;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
+  @OneToMany(
+    () => Transaction,
+    (transaction) => transaction.recurringTransaction,
+  )
+  generatedTransactions: Transaction[];
 }

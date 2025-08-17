@@ -15,12 +15,12 @@ A robust, scalable backend for personal finance management, built with NestJS an
 - [x] Category & tag management
   - [x] Seed default categories
 - [ ] Budget planning and tracking
-- [ ] Recurring transactions
+- [x] Recurring transactions
 - [ ] Financial goals & savings tracking
 - [ ] Reports and analytics (monthly, custom range, category breakdown)
 - [ ] CSV/Excel import & export
 - [ ] Notifications & reminders
-- [ ] API documentation (Swagger/OpenAPI)
+- [x] API documentation (Swagger/OpenAPI)
 - [ ] Admin panel (optional)
 
 ---

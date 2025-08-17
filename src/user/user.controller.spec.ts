@@ -69,12 +69,7 @@ describe('UserController', () => {
       const error = new Error('User not found');
       mockUserService.getProfile.mockRejectedValue(error);
 
-      await expect(
-        controller.getProfile(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          mockRequest as any,
-        ),
-      ).rejects.toThrow(error);
+      await expect(controller.getProfile(mockRequest)).rejects.toThrow(error);
       expect(mockUserService.getProfile).toHaveBeenCalledWith(mockUserId);
     });
   });
@@ -118,11 +113,7 @@ describe('UserController', () => {
       mockUserService.updateProfile.mockRejectedValue(error);
 
       await expect(
-        controller.updateProfile(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          mockRequest as any,
-          updateProfileDto,
-        ),
+        controller.updateProfile(mockRequest, updateProfileDto),
       ).rejects.toThrow(error);
       expect(mockUserService.updateProfile).toHaveBeenCalledWith(
         mockUserId,

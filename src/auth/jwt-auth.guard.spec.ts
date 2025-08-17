@@ -17,7 +17,7 @@ describe('JwtAuthGuard', () => {
     const mockRequest = {
       headers,
       user: undefined,
-    } as Record<string, any>;
+    } as Record<string, unknown>;
 
     return {
       switchToHttp: () => ({
